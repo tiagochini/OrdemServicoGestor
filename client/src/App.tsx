@@ -30,6 +30,13 @@ function Router() {
       <ProtectedRoute path="/orders/:id" component={OrderDetails} />
       <ProtectedRoute path="/technicians" component={TechniciansList} />
       <ProtectedRoute path="/customers" component={CustomersList} />
+      <ProtectedRoute path="/finance" component={FinanceOverview} />
+      <ProtectedRoute path="/finance/transactions" component={Transactions} />
+      <ProtectedRoute path="/finance/accounts-payable" component={AccountsPayable} />
+      <ProtectedRoute path="/finance/accounts-receivable" component={AccountsReceivable} />
+      <ProtectedRoute path="/finance/accounts" component={Accounts} />
+      <ProtectedRoute path="/finance/budgets" component={Budgets} />
+      <ProtectedRoute path="/finance/reports" component={Reports} />
       <ProtectedRoute path="/settings" component={Settings} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />

@@ -4,7 +4,11 @@ import {
   FileText, 
   Users, 
   Building, 
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  DollarSign,
+  Receipt,
+  CreditCard,
+  BarChart
 } from "lucide-react";
 
 interface SidebarProps {
@@ -39,6 +43,12 @@ const Sidebar = ({ mobile = false, onClose }: SidebarProps) => {
       href: "/customers",
       icon: Building,
       active: location.startsWith("/customers")
+    },
+    {
+      name: "Finanças",
+      href: "/finance",
+      icon: DollarSign,
+      active: location.startsWith("/finance")
     },
     {
       name: "Configurações",
