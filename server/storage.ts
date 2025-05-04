@@ -9,8 +9,19 @@ import {
   type InsertNote,
   type User,
   type InsertUser,
+  type Transaction,
+  type InsertTransaction,
+  type Account,
+  type InsertAccount,
+  type Budget,
+  type InsertBudget,
+  type TransactionEntry,
+  type InsertTransactionEntry,
   OrderStatus,
   UserRole,
+  TransactionType,
+  TransactionStatus,
+  TransactionCategory,
 } from "@shared/schema";
 
 // Interface for storage operations
@@ -57,6 +68,63 @@ export interface IStorage {
     cancelled: number;
     revenue: number;
   }>;
+  
+  // Financial Transaction methods
+  getTransactions(): Promise<Transaction[]>;
+  getTransaction(id: number): Promise<Transaction | undefined>;
+  getTransactionsByType(type: string): Promise<Transaction[]>;
+  getTransactionsByStatus(status: string): Promise<Transaction[]>;
+  getTransactionsByCategory(category: string): Promise<Transaction[]>;
+  getTransactionsByCustomer(customerId: number): Promise<Transaction[]>;
+  getTransactionsByWorkOrder(workOrderId: number): Promise<Transaction[]>;
+  getTransactionsByDateRange(startDate: Date, endDate: Date): Promise<Transaction[]>;
+  getAccountsPayable(): Promise<Transaction[]>;
+  getAccountsReceivable(): Promise<Transaction[]>;
+  createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  updateTransaction(id: number, transaction: Partial<InsertTransaction>): Promise<Transaction | undefined>;
+  deleteTransaction(id: number): Promise<boolean>;
+  getTransactionEntries(transactionId: number): Promise<TransactionEntry[]>;
+  
+  // Financial Account methods
+  getAccounts(): Promise<Account[]>;
+  getAccount(id: number): Promise<Account | undefined>;
+  createAccount(account: InsertAccount): Promise<Account>;
+  updateAccount(id: number, account: Partial<InsertAccount>): Promise<Account | undefined>;
+  updateAccountBalance(id: number, amount: number): Promise<Account | undefined>;
+  deleteAccount(id: number): Promise<boolean>;
+  
+  // Budget methods
+  getBudgets(): Promise<Budget[]>;
+  getBudget(id: number): Promise<Budget | undefined>;
+  getBudgetsByCategory(category: string): Promise<Budget[]>;
+  getBudgetsByDateRange(startDate: Date, endDate: Date): Promise<Budget[]>;
+  createBudget(budget: InsertBudget): Promise<Budget>;
+  updateBudget(id: number, budget: Partial<InsertBudget>): Promise<Budget | undefined>;
+  deleteBudget(id: number): Promise<boolean>;
+  
+  // Financial Reports
+  getCashFlow(startDate: Date, endDate: Date): Promise<{
+    totalIncome: number;
+    totalExpense: number;
+    netCashFlow: number;
+    incomeByCategory: Record<string, number>;
+    expenseByCategory: Record<string, number>;
+    dailyCashFlow: Array<{ date: Date; income: number; expense: number; net: number; }>;
+  }>;
+  getAccountBalances(): Promise<{ totalBalance: number; accounts: Account[] }>;
+  getBudgetVsActual(startDate: Date, endDate: Date): Promise<{
+    category: string;
+    budgeted: number;
+    actual: number;
+    variance: number;
+  }[]>;
+  getProfitAndLoss(startDate: Date, endDate: Date): Promise<{
+    revenue: number;
+    expenses: number;
+    profit: number;
+    revenueByCategory: Record<string, number>;
+    expensesByCategory: Record<string, number>;
+  }>;
 }
 
 export class MemStorage implements IStorage {
@@ -65,12 +133,20 @@ export class MemStorage implements IStorage {
   private technicians: Map<number, Technician>;
   private workOrders: Map<number, WorkOrder>;
   private notes: Map<number, Note>;
+  private transactions: Map<number, Transaction>;
+  private accounts: Map<number, Account>;
+  private budgets: Map<number, Budget>;
+  private transactionEntries: Map<number, TransactionEntry>;
   
   private userId: number;
   private customerId: number;
   private technicianId: number;
   private workOrderId: number;
   private noteId: number;
+  private transactionId: number;
+  private accountId: number;
+  private budgetId: number;
+  private transactionEntryId: number;
 
   constructor() {
     this.users = new Map();
@@ -78,12 +154,20 @@ export class MemStorage implements IStorage {
     this.technicians = new Map();
     this.workOrders = new Map();
     this.notes = new Map();
+    this.transactions = new Map();
+    this.accounts = new Map();
+    this.budgets = new Map();
+    this.transactionEntries = new Map();
     
     this.userId = 1;
     this.customerId = 1;
     this.technicianId = 1;
     this.workOrderId = 1;
     this.noteId = 1;
+    this.transactionId = 1;
+    this.accountId = 1;
+    this.budgetId = 1;
+    this.transactionEntryId = 1;
     
     // Initialize with sample data
     this.initSampleData();
@@ -359,6 +443,435 @@ export class MemStorage implements IStorage {
       completed,
       cancelled,
       revenue,
+    };
+  }
+  
+  // Financial Transaction methods
+  async getTransactions(): Promise<Transaction[]> {
+    return Array.from(this.transactions.values());
+  }
+  
+  async getTransaction(id: number): Promise<Transaction | undefined> {
+    return this.transactions.get(id);
+  }
+  
+  async getTransactionsByType(type: string): Promise<Transaction[]> {
+    return Array.from(this.transactions.values()).filter(
+      (transaction) => transaction.type === type
+    );
+  }
+  
+  async getTransactionsByStatus(status: string): Promise<Transaction[]> {
+    return Array.from(this.transactions.values()).filter(
+      (transaction) => transaction.status === status
+    );
+  }
+  
+  async getTransactionsByCategory(category: string): Promise<Transaction[]> {
+    return Array.from(this.transactions.values()).filter(
+      (transaction) => transaction.category === category
+    );
+  }
+  
+  async getTransactionsByCustomer(customerId: number): Promise<Transaction[]> {
+    return Array.from(this.transactions.values()).filter(
+      (transaction) => transaction.customerId === customerId
+    );
+  }
+  
+  async getTransactionsByWorkOrder(workOrderId: number): Promise<Transaction[]> {
+    return Array.from(this.transactions.values()).filter(
+      (transaction) => transaction.workOrderId === workOrderId
+    );
+  }
+  
+  async getTransactionsByDateRange(startDate: Date, endDate: Date): Promise<Transaction[]> {
+    return Array.from(this.transactions.values()).filter(
+      (transaction) => {
+        const transactionDate = new Date(transaction.date);
+        return transactionDate >= startDate && transactionDate <= endDate;
+      }
+    );
+  }
+  
+  async getAccountsPayable(): Promise<Transaction[]> {
+    return Array.from(this.transactions.values()).filter(
+      (transaction) => 
+        transaction.type === TransactionType.EXPENSE && 
+        (transaction.status === TransactionStatus.PENDING || transaction.status === TransactionStatus.OVERDUE)
+    );
+  }
+  
+  async getAccountsReceivable(): Promise<Transaction[]> {
+    return Array.from(this.transactions.values()).filter(
+      (transaction) => 
+        transaction.type === TransactionType.INCOME && 
+        (transaction.status === TransactionStatus.PENDING || transaction.status === TransactionStatus.OVERDUE)
+    );
+  }
+  
+  async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
+    const id = this.transactionId++;
+    const now = new Date();
+    
+    const transaction: Transaction = {
+      ...insertTransaction,
+      id,
+      createdAt: now,
+      updatedAt: now,
+    };
+    
+    this.transactions.set(id, transaction);
+    return transaction;
+  }
+  
+  async updateTransaction(id: number, transactionUpdate: Partial<InsertTransaction>): Promise<Transaction | undefined> {
+    const transaction = this.transactions.get(id);
+    if (!transaction) return undefined;
+    
+    const updatedTransaction = {
+      ...transaction,
+      ...transactionUpdate,
+      updatedAt: new Date(),
+    };
+    
+    this.transactions.set(id, updatedTransaction);
+    return updatedTransaction;
+  }
+  
+  async deleteTransaction(id: number): Promise<boolean> {
+    return this.transactions.delete(id);
+  }
+  
+  async getTransactionEntries(transactionId: number): Promise<TransactionEntry[]> {
+    return Array.from(this.transactionEntries.values()).filter(
+      (entry) => entry.transactionId === transactionId
+    );
+  }
+  
+  // Financial Account methods
+  async getAccounts(): Promise<Account[]> {
+    return Array.from(this.accounts.values());
+  }
+  
+  async getAccount(id: number): Promise<Account | undefined> {
+    return this.accounts.get(id);
+  }
+  
+  async createAccount(insertAccount: InsertAccount): Promise<Account> {
+    const id = this.accountId++;
+    const now = new Date();
+    
+    const account: Account = {
+      ...insertAccount,
+      id,
+      balance: "0",
+      createdAt: now,
+      updatedAt: now,
+      isActive: true,
+    };
+    
+    this.accounts.set(id, account);
+    return account;
+  }
+  
+  async updateAccount(id: number, accountUpdate: Partial<InsertAccount>): Promise<Account | undefined> {
+    const account = this.accounts.get(id);
+    if (!account) return undefined;
+    
+    const updatedAccount = {
+      ...account,
+      ...accountUpdate,
+      updatedAt: new Date(),
+    };
+    
+    this.accounts.set(id, updatedAccount);
+    return updatedAccount;
+  }
+  
+  async updateAccountBalance(id: number, amount: number): Promise<Account | undefined> {
+    const account = this.accounts.get(id);
+    if (!account) return undefined;
+    
+    const currentBalance = parseFloat(account.balance.toString());
+    const newBalance = currentBalance + amount;
+    
+    const updatedAccount = {
+      ...account,
+      balance: newBalance.toString(),
+      updatedAt: new Date(),
+    };
+    
+    this.accounts.set(id, updatedAccount);
+    return updatedAccount;
+  }
+  
+  async deleteAccount(id: number): Promise<boolean> {
+    return this.accounts.delete(id);
+  }
+  
+  // Budget methods
+  async getBudgets(): Promise<Budget[]> {
+    return Array.from(this.budgets.values());
+  }
+  
+  async getBudget(id: number): Promise<Budget | undefined> {
+    return this.budgets.get(id);
+  }
+  
+  async getBudgetsByCategory(category: string): Promise<Budget[]> {
+    return Array.from(this.budgets.values()).filter(
+      (budget) => budget.category === category
+    );
+  }
+  
+  async getBudgetsByDateRange(startDate: Date, endDate: Date): Promise<Budget[]> {
+    return Array.from(this.budgets.values()).filter(
+      (budget) => {
+        const budgetStart = new Date(budget.periodStart);
+        const budgetEnd = new Date(budget.periodEnd);
+        
+        return (
+          (budgetStart >= startDate && budgetStart <= endDate) ||
+          (budgetEnd >= startDate && budgetEnd <= endDate) ||
+          (budgetStart <= startDate && budgetEnd >= endDate)
+        );
+      }
+    );
+  }
+  
+  async createBudget(insertBudget: InsertBudget): Promise<Budget> {
+    const id = this.budgetId++;
+    const now = new Date();
+    
+    const budget: Budget = {
+      ...insertBudget,
+      id,
+      createdAt: now,
+      updatedAt: now,
+    };
+    
+    this.budgets.set(id, budget);
+    return budget;
+  }
+  
+  async updateBudget(id: number, budgetUpdate: Partial<InsertBudget>): Promise<Budget | undefined> {
+    const budget = this.budgets.get(id);
+    if (!budget) return undefined;
+    
+    const updatedBudget = {
+      ...budget,
+      ...budgetUpdate,
+      updatedAt: new Date(),
+    };
+    
+    this.budgets.set(id, updatedBudget);
+    return updatedBudget;
+  }
+  
+  async deleteBudget(id: number): Promise<boolean> {
+    return this.budgets.delete(id);
+  }
+  
+  // Financial Reports
+  async getCashFlow(startDate: Date, endDate: Date): Promise<{
+    totalIncome: number;
+    totalExpense: number;
+    netCashFlow: number;
+    incomeByCategory: Record<string, number>;
+    expenseByCategory: Record<string, number>;
+    dailyCashFlow: Array<{ date: Date; income: number; expense: number; net: number; }>;
+  }> {
+    const transactions = await this.getTransactionsByDateRange(startDate, endDate);
+    
+    const incomes = transactions.filter(t => t.type === TransactionType.INCOME && t.status === TransactionStatus.PAID);
+    const expenses = transactions.filter(t => t.type === TransactionType.EXPENSE && t.status === TransactionStatus.PAID);
+    
+    const totalIncome = incomes.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
+    const totalExpense = expenses.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
+    const netCashFlow = totalIncome - totalExpense;
+    
+    const incomeByCategory: Record<string, number> = {};
+    const expenseByCategory: Record<string, number> = {};
+    
+    // Group incomes by category
+    incomes.forEach(income => {
+      const category = income.category;
+      const amount = parseFloat(income.amount.toString());
+      incomeByCategory[category] = (incomeByCategory[category] || 0) + amount;
+    });
+    
+    // Group expenses by category
+    expenses.forEach(expense => {
+      const category = expense.category;
+      const amount = parseFloat(expense.amount.toString());
+      expenseByCategory[category] = (expenseByCategory[category] || 0) + amount;
+    });
+    
+    // Generate daily cash flow data
+    const dailyCashFlow: Array<{ date: Date; income: number; expense: number; net: number; }> = [];
+    
+    // Create a map of dates with income and expense values
+    const dailyMap = new Map<string, { date: Date; income: number; expense: number; }>();
+    
+    // Initialize the map with all dates in the range
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      const dateString = currentDate.toISOString().split('T')[0];
+      dailyMap.set(dateString, { date: new Date(currentDate), income: 0, expense: 0 });
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    // Add income data
+    incomes.forEach(income => {
+      const dateString = new Date(income.date).toISOString().split('T')[0];
+      const entry = dailyMap.get(dateString) || { date: new Date(income.date), income: 0, expense: 0 };
+      entry.income += parseFloat(income.amount.toString());
+      dailyMap.set(dateString, entry);
+    });
+    
+    // Add expense data
+    expenses.forEach(expense => {
+      const dateString = new Date(expense.date).toISOString().split('T')[0];
+      const entry = dailyMap.get(dateString) || { date: new Date(expense.date), income: 0, expense: 0 };
+      entry.expense += parseFloat(expense.amount.toString());
+      dailyMap.set(dateString, entry);
+    });
+    
+    // Convert map to array and calculate net value
+    dailyMap.forEach((value) => {
+      dailyCashFlow.push({
+        ...value,
+        net: value.income - value.expense
+      });
+    });
+    
+    // Sort by date
+    dailyCashFlow.sort((a, b) => a.date.getTime() - b.date.getTime());
+    
+    return {
+      totalIncome,
+      totalExpense,
+      netCashFlow,
+      incomeByCategory,
+      expenseByCategory,
+      dailyCashFlow,
+    };
+  }
+  
+  async getAccountBalances(): Promise<{ totalBalance: number; accounts: Account[] }> {
+    const accounts = await this.getAccounts();
+    let totalBalance = 0;
+    
+    accounts.forEach(account => {
+      totalBalance += parseFloat(account.balance.toString());
+    });
+    
+    return {
+      totalBalance,
+      accounts,
+    };
+  }
+  
+  async getBudgetVsActual(startDate: Date, endDate: Date): Promise<{
+    category: string;
+    budgeted: number;
+    actual: number;
+    variance: number;
+  }[]> {
+    const budgets = await this.getBudgetsByDateRange(startDate, endDate);
+    const transactions = await this.getTransactionsByDateRange(startDate, endDate);
+    
+    const result: {
+      category: string;
+      budgeted: number;
+      actual: number;
+      variance: number;
+    }[] = [];
+    
+    // Process each budget
+    for (const budget of budgets) {
+      const category = budget.category;
+      const budgeted = parseFloat(budget.amount.toString());
+      
+      // Find transactions in this category
+      const categoryTransactions = transactions.filter(t => 
+        t.category === category && 
+        t.status === TransactionStatus.PAID
+      );
+      
+      const actual = categoryTransactions.reduce(
+        (sum, t) => sum + parseFloat(t.amount.toString()), 
+        0
+      );
+      
+      const variance = budgeted - actual;
+      
+      result.push({
+        category,
+        budgeted,
+        actual,
+        variance,
+      });
+    }
+    
+    return result;
+  }
+  
+  async getProfitAndLoss(startDate: Date, endDate: Date): Promise<{
+    revenue: number;
+    expenses: number;
+    profit: number;
+    revenueByCategory: Record<string, number>;
+    expensesByCategory: Record<string, number>;
+  }> {
+    const transactions = await this.getTransactionsByDateRange(startDate, endDate);
+    
+    const revenues = transactions.filter(t => 
+      t.type === TransactionType.INCOME && 
+      t.status === TransactionStatus.PAID
+    );
+    
+    const expenses = transactions.filter(t => 
+      t.type === TransactionType.EXPENSE && 
+      t.status === TransactionStatus.PAID
+    );
+    
+    const revenue = revenues.reduce(
+      (sum, t) => sum + parseFloat(t.amount.toString()), 
+      0
+    );
+    
+    const expensesTotal = expenses.reduce(
+      (sum, t) => sum + parseFloat(t.amount.toString()), 
+      0
+    );
+    
+    const profit = revenue - expensesTotal;
+    
+    const revenueByCategory: Record<string, number> = {};
+    const expensesByCategory: Record<string, number> = {};
+    
+    // Group revenues by category
+    revenues.forEach(r => {
+      const category = r.category;
+      const amount = parseFloat(r.amount.toString());
+      revenueByCategory[category] = (revenueByCategory[category] || 0) + amount;
+    });
+    
+    // Group expenses by category
+    expenses.forEach(e => {
+      const category = e.category;
+      const amount = parseFloat(e.amount.toString());
+      expensesByCategory[category] = (expensesByCategory[category] || 0) + amount;
+    });
+    
+    return {
+      revenue,
+      expenses: expensesTotal,
+      profit,
+      revenueByCategory,
+      expensesByCategory,
     };
   }
 }
