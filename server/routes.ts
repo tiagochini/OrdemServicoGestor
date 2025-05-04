@@ -6,7 +6,13 @@ import {
   insertTechnicianSchema, 
   insertWorkOrderSchema, 
   insertNoteSchema, 
+  insertTransactionSchema,
+  insertAccountSchema,
+  insertBudgetSchema,
   OrderStatus,
+  TransactionStatus,
+  TransactionType,
+  TransactionCategory,
   insertUserSchema 
 } from "@shared/schema";
 import { ZodError } from "zod";
@@ -264,6 +270,344 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(stats);
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch statistics' });
+    }
+  });
+
+  // Financial Transaction routes
+  app.get('/api/transactions', isAuthenticated, async (req, res) => {
+    try {
+      const { type, status, category, customerId, workOrderId, startDate, endDate } = req.query;
+      
+      let transactions;
+      if (type) {
+        transactions = await storage.getTransactionsByType(type as string);
+      } else if (status) {
+        transactions = await storage.getTransactionsByStatus(status as string);
+      } else if (category) {
+        transactions = await storage.getTransactionsByCategory(category as string);
+      } else if (customerId) {
+        transactions = await storage.getTransactionsByCustomer(parseInt(customerId as string));
+      } else if (workOrderId) {
+        transactions = await storage.getTransactionsByWorkOrder(parseInt(workOrderId as string));
+      } else if (startDate && endDate) {
+        transactions = await storage.getTransactionsByDateRange(
+          new Date(startDate as string), 
+          new Date(endDate as string)
+        );
+      } else {
+        transactions = await storage.getTransactions();
+      }
+      
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch transactions' });
+    }
+  });
+
+  app.get('/api/transactions/accounts-payable', isAuthenticated, async (_req, res) => {
+    try {
+      const transactions = await storage.getAccountsPayable();
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch accounts payable' });
+    }
+  });
+
+  app.get('/api/transactions/accounts-receivable', isAuthenticated, async (_req, res) => {
+    try {
+      const transactions = await storage.getAccountsReceivable();
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch accounts receivable' });
+    }
+  });
+
+  app.get('/api/transactions/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const transaction = await storage.getTransaction(id);
+      
+      if (!transaction) {
+        return res.status(404).json({ message: 'Transaction not found' });
+      }
+      
+      res.json(transaction);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch transaction' });
+    }
+  });
+
+  app.post('/api/transactions', isAuthenticated, async (req, res) => {
+    try {
+      const transactionData = insertTransactionSchema.parse(req.body);
+      const transaction = await storage.createTransaction(transactionData);
+      res.status(201).json(transaction);
+    } catch (error) {
+      handleZodError(error, res);
+    }
+  });
+
+  app.put('/api/transactions/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const transactionData = insertTransactionSchema.partial().parse(req.body);
+      const transaction = await storage.updateTransaction(id, transactionData);
+      
+      if (!transaction) {
+        return res.status(404).json({ message: 'Transaction not found' });
+      }
+      
+      res.json(transaction);
+    } catch (error) {
+      handleZodError(error, res);
+    }
+  });
+
+  app.delete('/api/transactions/:id', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteTransaction(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: 'Transaction not found' });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to delete transaction' });
+    }
+  });
+
+  // Financial Account routes
+  app.get('/api/accounts', isAuthenticated, async (_req, res) => {
+    try {
+      const accounts = await storage.getAccounts();
+      res.json(accounts);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch accounts' });
+    }
+  });
+
+  app.get('/api/accounts/balances', isAuthenticated, async (_req, res) => {
+    try {
+      const balances = await storage.getAccountBalances();
+      res.json(balances);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch account balances' });
+    }
+  });
+
+  app.get('/api/accounts/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const account = await storage.getAccount(id);
+      
+      if (!account) {
+        return res.status(404).json({ message: 'Account not found' });
+      }
+      
+      res.json(account);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch account' });
+    }
+  });
+
+  app.post('/api/accounts', isAdmin, async (req, res) => {
+    try {
+      const accountData = insertAccountSchema.parse(req.body);
+      const account = await storage.createAccount(accountData);
+      res.status(201).json(account);
+    } catch (error) {
+      handleZodError(error, res);
+    }
+  });
+
+  app.put('/api/accounts/:id', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const accountData = insertAccountSchema.partial().parse(req.body);
+      const account = await storage.updateAccount(id, accountData);
+      
+      if (!account) {
+        return res.status(404).json({ message: 'Account not found' });
+      }
+      
+      res.json(account);
+    } catch (error) {
+      handleZodError(error, res);
+    }
+  });
+
+  app.put('/api/accounts/:id/balance', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { amount } = req.body;
+      
+      if (typeof amount !== 'number') {
+        return res.status(400).json({ message: 'Amount must be a number' });
+      }
+      
+      const account = await storage.updateAccountBalance(id, amount);
+      
+      if (!account) {
+        return res.status(404).json({ message: 'Account not found' });
+      }
+      
+      res.json(account);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to update account balance' });
+    }
+  });
+
+  app.delete('/api/accounts/:id', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteAccount(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: 'Account not found' });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to delete account' });
+    }
+  });
+
+  // Budget routes
+  app.get('/api/budgets', isAuthenticated, async (req, res) => {
+    try {
+      const { category, startDate, endDate } = req.query;
+      
+      let budgets;
+      if (category) {
+        budgets = await storage.getBudgetsByCategory(category as string);
+      } else if (startDate && endDate) {
+        budgets = await storage.getBudgetsByDateRange(
+          new Date(startDate as string), 
+          new Date(endDate as string)
+        );
+      } else {
+        budgets = await storage.getBudgets();
+      }
+      
+      res.json(budgets);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch budgets' });
+    }
+  });
+
+  app.get('/api/budgets/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const budget = await storage.getBudget(id);
+      
+      if (!budget) {
+        return res.status(404).json({ message: 'Budget not found' });
+      }
+      
+      res.json(budget);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch budget' });
+    }
+  });
+
+  app.post('/api/budgets', isAdmin, async (req, res) => {
+    try {
+      const budgetData = insertBudgetSchema.parse(req.body);
+      const budget = await storage.createBudget(budgetData);
+      res.status(201).json(budget);
+    } catch (error) {
+      handleZodError(error, res);
+    }
+  });
+
+  app.put('/api/budgets/:id', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const budgetData = insertBudgetSchema.partial().parse(req.body);
+      const budget = await storage.updateBudget(id, budgetData);
+      
+      if (!budget) {
+        return res.status(404).json({ message: 'Budget not found' });
+      }
+      
+      res.json(budget);
+    } catch (error) {
+      handleZodError(error, res);
+    }
+  });
+
+  app.delete('/api/budgets/:id', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteBudget(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: 'Budget not found' });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to delete budget' });
+    }
+  });
+
+  // Financial Reports
+  app.get('/api/reports/cash-flow', isAuthenticated, async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: 'Start date and end date are required' });
+      }
+      
+      const cashFlow = await storage.getCashFlow(
+        new Date(startDate as string), 
+        new Date(endDate as string)
+      );
+      
+      res.json(cashFlow);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to generate cash flow report' });
+    }
+  });
+
+  app.get('/api/reports/budget-vs-actual', isAuthenticated, async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: 'Start date and end date are required' });
+      }
+      
+      const budgetComparison = await storage.getBudgetVsActual(
+        new Date(startDate as string), 
+        new Date(endDate as string)
+      );
+      
+      res.json(budgetComparison);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to generate budget comparison report' });
+    }
+  });
+
+  app.get('/api/reports/profit-and-loss', isAuthenticated, async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: 'Start date and end date are required' });
+      }
+      
+      const profitAndLoss = await storage.getProfitAndLoss(
+        new Date(startDate as string), 
+        new Date(endDate as string)
+      );
+      
+      res.json(profitAndLoss);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to generate profit and loss report' });
     }
   });
 

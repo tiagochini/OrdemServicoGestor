@@ -12,6 +12,13 @@ import TechniciansList from "@/pages/technicians";
 import CustomersList from "@/pages/customers";
 import Settings from "@/pages/settings";
 import AuthPage from "@/pages/auth-page";
+import FinanceOverview from "@/pages/finance";
+import Transactions from "@/pages/finance/transactions";
+import AccountsPayable from "@/pages/finance/accounts-payable";
+import AccountsReceivable from "@/pages/finance/accounts-receivable";
+import Accounts from "@/pages/finance/accounts";
+import Budgets from "@/pages/finance/budgets";
+import Reports from "@/pages/finance/reports";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
 
