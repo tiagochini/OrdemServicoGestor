@@ -6,12 +6,17 @@ import {
   insertTechnicianSchema, 
   insertWorkOrderSchema, 
   insertNoteSchema, 
-  OrderStatus 
+  OrderStatus,
+  insertUserSchema 
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Configurar autenticação
+  const { isAuthenticated, isAdmin, isTechnician } = setupAuth(app);
+  
   // Error handler for Zod validation errors
   const handleZodError = (error: unknown, res: Response) => {
     if (error instanceof ZodError) {
@@ -46,7 +51,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/customers', async (req, res) => {
+  app.post('/api/customers', isAuthenticated, async (req, res) => {
     try {
       const customerData = insertCustomerSchema.parse(req.body);
       const customer = await storage.createCustomer(customerData);
@@ -56,7 +61,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/customers/:id', async (req, res) => {
+  app.put('/api/customers/:id', isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const customerData = insertCustomerSchema.partial().parse(req.body);
@@ -72,7 +77,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/customers/:id', async (req, res) => {
+  app.delete('/api/customers/:id', isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteCustomer(id);
@@ -112,7 +117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/technicians', async (req, res) => {
+  app.post('/api/technicians', isAdmin, async (req, res) => {
     try {
       const technicianData = insertTechnicianSchema.parse(req.body);
       const technician = await storage.createTechnician(technicianData);
@@ -122,7 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/technicians/:id', async (req, res) => {
+  app.put('/api/technicians/:id', isAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const technicianData = insertTechnicianSchema.partial().parse(req.body);
@@ -138,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/technicians/:id', async (req, res) => {
+  app.delete('/api/technicians/:id', isAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteTechnician(id);
@@ -190,7 +195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/work-orders', async (req, res) => {
+  app.post('/api/work-orders', isAuthenticated, async (req, res) => {
     try {
       const workOrderData = insertWorkOrderSchema.parse(req.body);
       const workOrder = await storage.createWorkOrder(workOrderData);
@@ -200,7 +205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/work-orders/:id', async (req, res) => {
+  app.put('/api/work-orders/:id', isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const workOrderData = insertWorkOrderSchema.partial().parse(req.body);
@@ -216,7 +221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/work-orders/:id', async (req, res) => {
+  app.delete('/api/work-orders/:id', isAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteWorkOrder(id);
@@ -242,7 +247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/notes', async (req, res) => {
+  app.post('/api/notes', isAuthenticated, async (req, res) => {
     try {
       const noteData = insertNoteSchema.parse(req.body);
       const note = await storage.createNote(noteData);

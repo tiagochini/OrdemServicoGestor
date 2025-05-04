@@ -11,6 +11,9 @@ import OrderDetails from "@/pages/orders/[id]";
 import TechniciansList from "@/pages/technicians";
 import CustomersList from "@/pages/customers";
 import Settings from "@/pages/settings";
+import AuthPage from "@/pages/auth-page";
+import { ProtectedRoute } from "./lib/protected-route";
+import { AuthProvider } from "@/hooks/use-auth";
 
 function Router() {
   return (
