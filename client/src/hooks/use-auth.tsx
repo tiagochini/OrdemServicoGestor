@@ -21,11 +21,13 @@ type AuthContextType = {
 type LoginData = {
   username: string;
   password: string;
+  rememberMe?: boolean;
 };
 
 const loginSchema = z.object({
   username: z.string().min(3, "Usuário deve ter pelo menos 3 caracteres"),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  rememberMe: z.boolean().optional().default(false),
 });
 
 // Criar schema personalizado para registro com base nos campos do insertUserSchema
