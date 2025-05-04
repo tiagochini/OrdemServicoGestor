@@ -4,7 +4,7 @@ import {
   useMutation,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { User, insertUserSchema } from "@shared/schema";
+import { User } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -28,16 +28,21 @@ const loginSchema = z.object({
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
 });
 
-type RegisterData = z.infer<typeof registerSchema>;
-
-const registerSchema = insertUserSchema.extend({
-  confirmPassword: z
-    .string()
-    .min(6, "A confirmação de senha deve ter pelo menos 6 caracteres"),
+// Criar schema personalizado para registro com base nos campos do insertUserSchema
+const registerSchema = z.object({
+  name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
+  username: z.string().min(3, "Usuário deve ter pelo menos 3 caracteres"),
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  confirmPassword: z.string().min(6, "A confirmação de senha deve ter pelo menos 6 caracteres"),
+  email: z.string().email("Email inválido").nullable().optional(),
+  role: z.enum(["admin", "technician", "customer"]).default("customer"),
+  relatedId: z.number().nullable().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "As senhas não coincidem",
   path: ["confirmPassword"],
 });
+
+type RegisterData = z.infer<typeof registerSchema>;
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -81,7 +86,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (userData: RegisterData) => {
-      const res = await apiRequest("POST", "/api/register", userData);
+      // Remover confirmPassword antes de enviar ao servidor
+      const { confirmPassword, ...userDataToSend } = userData;
+      
+      const res = await apiRequest("POST", "/api/register", userDataToSend);
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.message || "Falha no registro");

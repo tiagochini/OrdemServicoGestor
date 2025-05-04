@@ -18,12 +18,13 @@ import { AuthProvider } from "@/hooks/use-auth";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/orders" component={OrdersList} />
-      <Route path="/orders/:id" component={OrderDetails} />
-      <Route path="/technicians" component={TechniciansList} />
-      <Route path="/customers" component={CustomersList} />
-      <Route path="/settings" component={Settings} />
+      <ProtectedRoute path="/" component={Dashboard} />
+      <ProtectedRoute path="/orders" component={OrdersList} />
+      <ProtectedRoute path="/orders/:id" component={OrderDetails} />
+      <ProtectedRoute path="/technicians" component={TechniciansList} />
+      <ProtectedRoute path="/customers" component={CustomersList} />
+      <ProtectedRoute path="/settings" component={Settings} />
+      <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -32,12 +33,14 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <MainLayout>
-          <Router />
-        </MainLayout>
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <MainLayout>
+            <Router />
+          </MainLayout>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

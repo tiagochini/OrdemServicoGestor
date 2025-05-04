@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import Sidebar from "./sidebar";
 import Header from "./header";
 import MobileNav from "./mobile-nav";
+import { useAuth } from "@/hooks/use-auth";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -9,7 +11,22 @@ interface MainLayoutProps {
 
 const MainLayout = ({ children }: MainLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, isLoading } = useAuth();
+  const [location] = useLocation();
+  
+  // Verificar se estamos na página de autenticação
+  const isAuthPage = location === "/auth";
+  
+  // Se estamos na página de autenticação ou não há usuário autenticado, não mostramos o layout completo
+  if (isAuthPage || (!user && !isLoading)) {
+    return (
+      <div className="min-h-screen">
+        {children}
+      </div>
+    );
+  }
 
+  // Layout completo para usuários autenticados
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* Desktop Sidebar */}
