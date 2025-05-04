@@ -12,11 +12,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function AuthPage() {
   const [location, navigate] = useLocation();
@@ -67,7 +70,10 @@ export default function AuthPage() {
     <div className="flex min-h-screen">
       {/* Seção esquerda - Formulário */}
       <div className="flex flex-col justify-center w-full max-w-md p-8">
-        <h1 className="text-3xl font-bold mb-6">Sistema de Gerenciamento de OS</h1>
+        <h1 className="text-3xl font-bold mb-2">TuringOS</h1>
+        <div className="w-32 h-16 mb-4 flex items-center justify-center bg-gray-100 rounded border border-dashed border-gray-300">
+          <span className="text-gray-400 text-xs">Logo da empresa</span>
+        </div>
         
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "register")}>
           <TabsList className="grid w-full grid-cols-2 mb-8">
