@@ -44,7 +44,7 @@ export function setupAuth(app: Express) {
       checkPeriod: 86400000 // 24 horas
     }),
     cookie: {
-      maxAge: 24 * 60 * 60 * 1000, // 24 horas
+      maxAge: 24 * 60 * 60 * 1000, // 24 horas por padrão
       secure: process.env.NODE_ENV === "production"
     }
   };
@@ -147,6 +147,16 @@ export function setupAuth(app: Express) {
       }
       req.login(user, (err) => {
         if (err) return next(err);
+        
+        // Ajustar duração da sessão baseado no "manter conectado"
+        if (req.body.rememberMe) {
+          // Se escolheu manter conectado, aumentar para 30 dias
+          req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 dias
+        } else {
+          // Caso contrário, manter o padrão de 24 horas
+          req.session.cookie.maxAge = 24 * 60 * 60 * 1000; // 24 horas
+        }
+        
         return res.status(200).json(user);
       });
     })(req, res, next);

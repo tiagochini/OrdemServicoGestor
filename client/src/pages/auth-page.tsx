@@ -39,6 +39,7 @@ export default function AuthPage() {
     defaultValues: {
       username: "",
       password: "",
+      rememberMe: false,
     },
   });
 
@@ -125,6 +126,28 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
+                    <div className="flex items-center justify-between">
+                      <FormField
+                        control={loginForm.control}
+                        name="rememberMe"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <Checkbox 
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>Manter conectado</FormLabel>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      <a href="#" className="text-sm text-blue-600 hover:text-blue-800">
+                        Esqueceu sua senha?
+                      </a>
+                    </div>
                     <Button 
                       type="submit" 
                       className="w-full" 
