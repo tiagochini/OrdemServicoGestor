@@ -7,15 +7,19 @@ import {
   type InsertWorkOrder,
   type Note,
   type InsertNote,
+  type User,
+  type InsertUser,
   OrderStatus,
+  UserRole,
 } from "@shared/schema";
 
 // Interface for storage operations
 export interface IStorage {
-  // User methods (from original template)
-  getUser(id: number): Promise<any | undefined>;
-  getUserByUsername(username: string): Promise<any | undefined>;
-  createUser(user: any): Promise<any>;
+  // User methods
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  getUsers(): Promise<User[]>;
 
   // Customer methods
   getCustomers(): Promise<Customer[]>;
@@ -56,7 +60,7 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<number, any>;
+  private users: Map<number, User>;
   private customers: Map<number, Customer>;
   private technicians: Map<number, Technician>;
   private workOrders: Map<number, WorkOrder>;
@@ -161,20 +165,31 @@ export class MemStorage implements IStorage {
     workOrders.forEach(order => this.createWorkOrder(order));
   }
 
-  // User methods (from original template)
-  async getUser(id: number): Promise<any | undefined> {
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
     return this.users.get(id);
   }
 
-  async getUserByUsername(username: string): Promise<any | undefined> {
+  async getUserByUsername(username: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
       (user) => user.username === username,
     );
   }
 
-  async createUser(insertUser: any): Promise<any> {
+  async getUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userId++;
-    const user = { ...insertUser, id };
+    const now = new Date();
+    
+    const user: User = {
+      ...insertUser,
+      id,
+      createdAt: now
+    };
+    
     this.users.set(id, user);
     return user;
   }
