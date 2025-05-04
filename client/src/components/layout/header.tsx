@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Menu } from "lucide-react";
+import { Bell, Menu, LogOut, User } from "lucide-react";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -21,6 +22,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { user, logoutMutation } = useAuth();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +37,25 @@ const Header = ({ onMenuClick }: HeaderProps) => {
       title: "Notificações",
       description: "Não há novas notificações.",
     });
+  };
+  
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        navigate('/auth');
+      }
+    });
+  };
+  
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user || !user.name) return "US";
+    return user.name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
   };
 
   return (
@@ -86,20 +107,22 @@ const Header = ({ onMenuClick }: HeaderProps) => {
                 >
                   <span className="sr-only">Abrir menu de usuário</span>
                   <Avatar>
-                    <AvatarImage 
-                      src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
-                      alt="User profile" 
-                    />
-                    <AvatarFallback>AD</AvatarFallback>
+                    <AvatarFallback>{getUserInitials()}</AvatarFallback>
                   </Avatar>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+                <DropdownMenuLabel>{user?.name || 'Usuário'}</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-xs text-gray-500">{user?.email || 'Sem email'}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Perfil</DropdownMenuItem>
-                <DropdownMenuItem>Configurações</DropdownMenuItem>
-                <DropdownMenuItem>Sair</DropdownMenuItem>
+                <DropdownMenuItem>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Perfil</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sair</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
