@@ -12,6 +12,27 @@ export const OrderStatus = {
 
 export type OrderStatusType = typeof OrderStatus[keyof typeof OrderStatus];
 
+// User role enum
+export const UserRole = {
+  ADMIN: "admin",
+  TECHNICIAN: "technician",
+  CUSTOMER: "customer",
+} as const;
+
+export type UserRoleType = typeof UserRole[keyof typeof UserRole];
+
+// Users table
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  name: text("name").notNull(),
+  email: text("email"),
+  role: text("role").notNull().default(UserRole.CUSTOMER),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  relatedId: integer("related_id"),
+});
+
 // Customers table
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
@@ -80,6 +101,27 @@ export const insertWorkOrderSchema = createInsertSchema(workOrders)
     ]),
   });
 
+// Schema for user insertion
+export const insertUserSchema = createInsertSchema(users)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    role: z.enum([UserRole.ADMIN, UserRole.TECHNICIAN, UserRole.CUSTOMER]),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+
+// Login schema
+export const loginSchema = z.object({
+  username: z.string().min(3, "Username is required"),
+  password: z.string().min(6, "Password is required"),
+});
+
 // Schema for inserting notes
 export const insertNoteSchema = createInsertSchema(notes).omit({
   id: true,
@@ -87,6 +129,10 @@ export const insertNoteSchema = createInsertSchema(notes).omit({
 });
 
 // Types
+export type User = typeof users.$inferSelect;
+export type InsertUser = Omit<z.infer<typeof insertUserSchema>, 'confirmPassword'>;
+export type LoginUser = z.infer<typeof loginSchema>;
+
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
 
