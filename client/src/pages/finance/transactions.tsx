@@ -26,7 +26,9 @@ const Transactions = () => {
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
   const [match, params] = useRoute("/finance/transactions");
-  const [searchParams] = new URLSearchParams(location.search);
+  
+  // Extrair parâmetros da URL de forma segura
+  const searchParams = new URLSearchParams(window.location.search);
   const showNewDialog = searchParams.get("new") === "true";
   
   const [filterType, setFilterType] = useState<string | null>(null);
