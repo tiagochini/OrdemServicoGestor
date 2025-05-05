@@ -841,6 +841,40 @@ const Transactions = () => {
                     />
                   </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="workOrderId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Ordem de Serviço</FormLabel>
+                          <Select
+                            onValueChange={(value) => field.onChange(parseInt(value))}
+                            defaultValue={field.value?.toString()}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione a OS (opcional)" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {workOrders?.map((workOrder: any) => (
+                                <SelectItem key={workOrder.id} value={workOrder.id.toString()}>
+                                  OS #{workOrder.orderNumber} - {workOrder.description.substring(0, 30)}
+                                  {workOrder.description.length > 30 ? "..." : ""}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Ordem de serviço relacionada a esta transação
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
