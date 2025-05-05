@@ -416,7 +416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/accounts', isAdmin, async (req, res) => {
+  app.post('/api/accounts', isAuthenticated, async (req, res) => {
     try {
       const accountData = insertAccountSchema.parse(req.body);
       const account = await storage.createAccount(accountData);
@@ -516,7 +516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/budgets', isAdmin, async (req, res) => {
+  app.post('/api/budgets', isAuthenticated, async (req, res) => {
     try {
       const budgetData = insertBudgetSchema.parse(req.body);
       const budget = await storage.createBudget(budgetData);
@@ -526,7 +526,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/budgets/:id', isAdmin, async (req, res) => {
+  app.put('/api/budgets/:id', isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const budgetData = insertBudgetSchema.partial().parse(req.body);
