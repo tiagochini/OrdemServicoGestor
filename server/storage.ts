@@ -17,11 +17,17 @@ import {
   type InsertBudget,
   type TransactionEntry,
   type InsertTransactionEntry,
+  type CatalogItem,
+  type InsertCatalogItem,
+  type WorkOrderItem,
+  type InsertWorkOrderItem,
   OrderStatus,
   UserRole,
   TransactionType,
   TransactionStatus,
   TransactionCategory,
+  ItemType,
+  UnitType,
 } from "@shared/schema";
 
 // Interface for storage operations
@@ -152,6 +158,8 @@ export class MemStorage implements IStorage {
   private accounts: Map<number, Account>;
   private budgets: Map<number, Budget>;
   private transactionEntries: Map<number, TransactionEntry>;
+  private catalogItems: Map<number, CatalogItem>;
+  private workOrderItems: Map<number, WorkOrderItem>;
   
   private userId: number;
   private customerId: number;
@@ -162,6 +170,8 @@ export class MemStorage implements IStorage {
   private accountId: number;
   private budgetId: number;
   private transactionEntryId: number;
+  private catalogItemId: number;
+  private workOrderItemId: number;
 
   constructor() {
     this.users = new Map();
@@ -173,6 +183,8 @@ export class MemStorage implements IStorage {
     this.accounts = new Map();
     this.budgets = new Map();
     this.transactionEntries = new Map();
+    this.catalogItems = new Map();
+    this.workOrderItems = new Map();
     
     this.userId = 1;
     this.customerId = 1;
@@ -183,6 +195,8 @@ export class MemStorage implements IStorage {
     this.accountId = 1;
     this.budgetId = 1;
     this.transactionEntryId = 1;
+    this.catalogItemId = 1;
+    this.workOrderItemId = 1;
     
     // Initialize with sample data
     this.initSampleData();
@@ -262,6 +276,128 @@ export class MemStorage implements IStorage {
     ];
     
     workOrders.forEach(order => this.createWorkOrder(order));
+    
+    // Add sample catalog items - Products
+    const catalogProducts = [
+      {
+        name: "Disco SSD 240GB",
+        description: "Disco de estado sólido para upgrade de computadores",
+        type: ItemType.PRODUCT,
+        unit: UnitType.UNIT,
+        price: "299.99",
+        cost: "180.00",
+        sku: "SSD-240",
+        tags: ["hardware", "armazenamento", "ssd"],
+        isActive: true,
+      },
+      {
+        name: "Memória RAM 8GB DDR4",
+        description: "Módulo de memória para computadores desktop",
+        type: ItemType.PRODUCT,
+        unit: UnitType.UNIT,
+        price: "249.90",
+        cost: "150.00",
+        sku: "RAM-8GB",
+        tags: ["hardware", "memória", "ram"],
+        isActive: true,
+      },
+      {
+        name: "Fonte de Alimentação 500W",
+        description: "Fonte ATX para computadores desktop",
+        type: ItemType.PRODUCT,
+        unit: UnitType.UNIT,
+        price: "189.90",
+        cost: "110.00",
+        sku: "PSU-500", 
+        tags: ["hardware", "fonte", "energia"],
+        isActive: true,
+      },
+      {
+        name: "Cabo HDMI 2.0 2m",
+        description: "Cabo HDMI de alta velocidade",
+        type: ItemType.PRODUCT,
+        unit: UnitType.UNIT,
+        price: "39.90",
+        cost: "15.00",
+        sku: "HDMI-2M",
+        tags: ["cabos", "conectividade"],
+        isActive: true,
+      },
+      {
+        name: "Bateria Notebook",
+        description: "Bateria compatível com diversos modelos de notebooks",
+        type: ItemType.PRODUCT,
+        unit: UnitType.UNIT,
+        price: "269.90",
+        cost: "160.00",
+        sku: "BAT-NOTE",
+        tags: ["bateria", "notebook", "energia"],
+        isActive: true,
+      }
+    ];
+    
+    catalogProducts.forEach(product => this.createCatalogItem(product));
+    
+    // Add sample catalog items - Services
+    const catalogServices = [
+      {
+        name: "Formatação de Computador",
+        description: "Formatação completa com instalação de sistema operacional e programas básicos",
+        type: ItemType.SERVICE,
+        unit: UnitType.UNIT,
+        price: "150.00",
+        cost: "50.00",
+        sku: "SRV-FORMAT",
+        tags: ["formatação", "sistema", "instalação"],
+        isActive: true,
+      },
+      {
+        name: "Montagem de PC",
+        description: "Montagem completa de computador com testes",
+        type: ItemType.SERVICE,
+        unit: UnitType.UNIT,
+        price: "200.00",
+        cost: "70.00",
+        sku: "SRV-MOUNT",
+        tags: ["montagem", "hardware"],
+        isActive: true,
+      },
+      {
+        name: "Reparo de Notebook",
+        description: "Diagnóstico e reparo de problemas em notebooks",
+        type: ItemType.SERVICE,
+        unit: UnitType.HOUR,
+        price: "90.00",
+        cost: "30.00",
+        sku: "SRV-REPAIR",
+        tags: ["reparo", "notebook"],
+        isActive: true,
+      },
+      {
+        name: "Instalação de Redes",
+        description: "Configuração e instalação de redes para empresas e residências",
+        type: ItemType.SERVICE,
+        unit: UnitType.HOUR,
+        price: "120.00",
+        cost: "40.00",
+        sku: "SRV-NET",
+        tags: ["rede", "instalação", "configuração"],
+        isActive: true,
+      },
+      {
+        name: "Diagnóstico Avançado",
+        description: "Diagnóstico completo de problemas de hardware e software",
+        type: ItemType.SERVICE,
+        unit: UnitType.UNIT,
+        price: "80.00",
+        cost: "20.00",
+        sku: "SRV-DIAG",
+        tags: ["diagnóstico", "análise", "problema"],
+        isActive: true,
+      }
+    ];
+    
+    catalogServices.forEach(service => this.createCatalogItem(service));
   }
 
   // User methods
@@ -459,6 +595,99 @@ export class MemStorage implements IStorage {
       cancelled,
       revenue,
     };
+  }
+  
+  // Catalog methods
+  async getCatalogItems(): Promise<CatalogItem[]> {
+    return Array.from(this.catalogItems.values());
+  }
+  
+  async getCatalogItem(id: number): Promise<CatalogItem | undefined> {
+    return this.catalogItems.get(id);
+  }
+  
+  async getCatalogItemsByType(type: string): Promise<CatalogItem[]> {
+    return Array.from(this.catalogItems.values()).filter(
+      (item) => item.type === type
+    );
+  }
+  
+  async getCatalogItemsByTags(tags: string[]): Promise<CatalogItem[]> {
+    return Array.from(this.catalogItems.values()).filter((item) => {
+      if (!item.tags) return false;
+      return tags.some(tag => item.tags?.includes(tag));
+    });
+  }
+  
+  async createCatalogItem(insertItem: InsertCatalogItem): Promise<CatalogItem> {
+    const id = this.catalogItemId++;
+    const now = new Date();
+    
+    const catalogItem: CatalogItem = {
+      ...insertItem,
+      id,
+      createdAt: now,
+      updatedAt: now,
+    };
+    
+    this.catalogItems.set(id, catalogItem);
+    return catalogItem;
+  }
+  
+  async updateCatalogItem(id: number, itemUpdate: Partial<InsertCatalogItem>): Promise<CatalogItem | undefined> {
+    const item = this.catalogItems.get(id);
+    if (!item) return undefined;
+    
+    const updatedItem = {
+      ...item,
+      ...itemUpdate,
+      updatedAt: new Date(),
+    };
+    
+    this.catalogItems.set(id, updatedItem);
+    return updatedItem;
+  }
+  
+  async deleteCatalogItem(id: number): Promise<boolean> {
+    return this.catalogItems.delete(id);
+  }
+  
+  // Work Order Items methods
+  async getWorkOrderItems(workOrderId: number): Promise<WorkOrderItem[]> {
+    return Array.from(this.workOrderItems.values()).filter(
+      (item) => item.workOrderId === workOrderId
+    );
+  }
+  
+  async createWorkOrderItem(insertItem: InsertWorkOrderItem): Promise<WorkOrderItem> {
+    const id = this.workOrderItemId++;
+    const now = new Date();
+    
+    const workOrderItem: WorkOrderItem = {
+      ...insertItem,
+      id,
+      createdAt: now,
+    };
+    
+    this.workOrderItems.set(id, workOrderItem);
+    return workOrderItem;
+  }
+  
+  async updateWorkOrderItem(id: number, itemUpdate: Partial<InsertWorkOrderItem>): Promise<WorkOrderItem | undefined> {
+    const item = this.workOrderItems.get(id);
+    if (!item) return undefined;
+    
+    const updatedItem = {
+      ...item,
+      ...itemUpdate,
+    };
+    
+    this.workOrderItems.set(id, updatedItem);
+    return updatedItem;
+  }
+  
+  async deleteWorkOrderItem(id: number): Promise<boolean> {
+    return this.workOrderItems.delete(id);
   }
   
   // Financial Transaction methods
