@@ -55,6 +55,26 @@ export const TransactionCategory = {
 
 export type TransactionCategoryType = typeof TransactionCategory[keyof typeof TransactionCategory];
 
+// Tipo de produto ou serviço
+export const ItemType = {
+  PRODUCT: "product",
+  SERVICE: "service",
+} as const;
+
+export type ItemTypeType = typeof ItemType[keyof typeof ItemType];
+
+// Unidade de medida para produtos
+export const UnitType = {
+  UNIT: "unit",
+  KG: "kg",
+  L: "l",
+  M: "m",
+  M2: "m2",
+  HOUR: "hour",
+} as const;
+
+export type UnitTypeType = typeof UnitType[keyof typeof UnitType];
+
 // Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -158,6 +178,34 @@ export const budgets = pgTable("budgets", {
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Catálogo de Serviços e Produtos
+export const catalogItems = pgTable("catalog_items", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").notNull(), // produto ou serviço
+  unit: text("unit").notNull(), // unidade, kg, hora, etc.
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  cost: decimal("cost", { precision: 10, scale: 2 }),
+  sku: text("sku"),
+  tags: text("tags").array(), // tags para categorização 
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Relção entre itens de catálogo e ordens de serviço
+export const workOrderItems = pgTable("work_order_items", {
+  id: serial("id").primaryKey(),
+  workOrderId: integer("work_order_id").notNull(),
+  catalogItemId: integer("catalog_item_id").notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  discount: decimal("discount", { precision: 10, scale: 2 }).default("0"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Schema for inserting customers
@@ -292,6 +340,40 @@ export const insertTransactionEntrySchema = createInsertSchema(transactionEntrie
   ),
 });
 
+// Schema para catalogItems
+export const insertCatalogItemSchema = createInsertSchema(catalogItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  tags: true,
+}).extend({
+  type: z.enum([ItemType.PRODUCT, ItemType.SERVICE]),
+  unit: z.enum([UnitType.UNIT, UnitType.KG, UnitType.L, UnitType.M, UnitType.M2, UnitType.HOUR]),
+  price: z.string().or(z.number()).pipe(
+    z.coerce.number().positive("O preço deve ser positivo")
+  ),
+  cost: z.string().or(z.number()).pipe(
+    z.coerce.number().positive("O custo deve ser positivo")
+  ).optional().nullable(),
+  tags: z.array(z.string()).optional().default([]),
+});
+
+// Schema para workOrderItems
+export const insertWorkOrderItemSchema = createInsertSchema(workOrderItems).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  quantity: z.string().or(z.number()).pipe(
+    z.coerce.number().positive("A quantidade deve ser positiva")
+  ),
+  unitPrice: z.string().or(z.number()).pipe(
+    z.coerce.number().positive("O preço unitário deve ser positivo")
+  ),
+  discount: z.string().or(z.number()).pipe(
+    z.coerce.number().min(0, "O desconto não pode ser negativo")
+  ).optional().default(0),
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = Omit<z.infer<typeof insertUserSchema>, 'confirmPassword'>;
@@ -320,3 +402,10 @@ export type InsertBudget = z.infer<typeof insertBudgetSchema>;
 
 export type TransactionEntry = typeof transactionEntries.$inferSelect;
 export type InsertTransactionEntry = z.infer<typeof insertTransactionEntrySchema>;
+
+export type CatalogItem = typeof catalogItems.$inferSelect;
+export type InsertCatalogItem = z.infer<typeof insertCatalogItemSchema>;
+
+export type WorkOrderItem = typeof workOrderItems.$inferSelect;
+export type InsertWorkOrderItem = z.infer<typeof insertWorkOrderItemSchema>;
+

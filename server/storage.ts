@@ -125,6 +125,21 @@ export interface IStorage {
     revenueByCategory: Record<string, number>;
     expensesByCategory: Record<string, number>;
   }>;
+  
+  // Catalog Items (Products and Services)
+  getCatalogItems(): Promise<CatalogItem[]>;
+  getCatalogItem(id: number): Promise<CatalogItem | undefined>;
+  getCatalogItemsByType(type: string): Promise<CatalogItem[]>;
+  getCatalogItemsByTags(tags: string[]): Promise<CatalogItem[]>;
+  createCatalogItem(item: InsertCatalogItem): Promise<CatalogItem>;
+  updateCatalogItem(id: number, item: Partial<InsertCatalogItem>): Promise<CatalogItem | undefined>;
+  deleteCatalogItem(id: number): Promise<boolean>;
+  
+  // Work Order Items
+  getWorkOrderItems(workOrderId: number): Promise<WorkOrderItem[]>;
+  createWorkOrderItem(item: InsertWorkOrderItem): Promise<WorkOrderItem>;
+  updateWorkOrderItem(id: number, item: Partial<InsertWorkOrderItem>): Promise<WorkOrderItem | undefined>;
+  deleteWorkOrderItem(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
