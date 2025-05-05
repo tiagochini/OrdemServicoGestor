@@ -19,6 +19,10 @@ import AccountsReceivable from "@/pages/finance/accounts-receivable";
 import Accounts from "@/pages/finance/accounts";
 import Budgets from "@/pages/finance/budgets";
 import Reports from "@/pages/finance/reports";
+import Catalog from "@/pages/catalog";
+import CatalogItemDetails from "@/pages/catalog/[id]";
+import NewCatalogItem from "@/pages/catalog/new";
+import EditCatalogItem from "@/pages/catalog/edit/[id]";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
 
@@ -37,6 +41,10 @@ function Router() {
       <ProtectedRoute path="/finance/accounts" component={Accounts} />
       <ProtectedRoute path="/finance/budgets" component={Budgets} />
       <ProtectedRoute path="/finance/reports" component={Reports} />
+      <ProtectedRoute path="/catalog" component={Catalog} />
+      <ProtectedRoute path="/catalog/new" component={NewCatalogItem} />
+      <ProtectedRoute path="/catalog/edit/:id" component={EditCatalogItem} />
+      <ProtectedRoute path="/catalog/:id" component={CatalogItemDetails} />
       <ProtectedRoute path="/settings" component={Settings} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />

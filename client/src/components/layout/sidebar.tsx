@@ -8,7 +8,9 @@ import {
   DollarSign,
   Receipt,
   CreditCard,
-  BarChart
+  BarChart,
+  Package,
+  Tags
 } from "lucide-react";
 
 interface SidebarProps {
@@ -49,6 +51,12 @@ const Sidebar = ({ mobile = false, onClose }: SidebarProps) => {
       href: "/finance",
       icon: DollarSign,
       active: location.startsWith("/finance")
+    },
+    {
+      name: "Catálogo",
+      href: "/catalog",
+      icon: Tags,
+      active: location.startsWith("/catalog")
     },
     {
       name: "Configurações",

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, FileText, Users, Building, Plus, DollarSign } from "lucide-react";
+import { Home, FileText, Users, Building, Plus, DollarSign, Tags } from "lucide-react";
 import { useState } from "react";
 import OrderForm from "../orders/order-form";
 
@@ -37,6 +37,12 @@ const MobileNav = () => {
       href: "/finance",
       icon: DollarSign,
       active: location.startsWith("/finance")
+    },
+    {
+      name: "Catálogo",
+      href: "/catalog",
+      icon: Tags,
+      active: location.startsWith("/catalog")
     }
   ];
 
