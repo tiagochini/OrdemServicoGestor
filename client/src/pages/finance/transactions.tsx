@@ -357,7 +357,7 @@ const Transactions = () => {
 
       {/* Modal para Nova Transação */}
       <Dialog open={isNewTransactionOpen} onOpenChange={setIsNewTransactionOpen}>
-        <DialogContent className="sm:max-w-[625px]">
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nova Transação</DialogTitle>
             <DialogDescription>
@@ -575,37 +575,39 @@ const Transactions = () => {
                     />
                   </div>
 
-                  <FormField
-                    control={form.control}
-                    name="workOrderId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ordem de Serviço</FormLabel>
-                        <Select
-                          onValueChange={(value) => field.onChange(parseInt(value))}
-                          defaultValue={field.value?.toString()}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione a OS (opcional)" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {workOrders?.map((workOrder: any) => (
-                              <SelectItem key={workOrder.id} value={workOrder.id.toString()}>
-                                OS #{workOrder.orderNumber} - {workOrder.description.substring(0, 30)}
-                                {workOrder.description.length > 30 ? "..." : ""}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Ordem de serviço relacionada a esta receita
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="workOrderId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Ordem de Serviço</FormLabel>
+                          <Select
+                            onValueChange={(value) => field.onChange(parseInt(value))}
+                            defaultValue={field.value?.toString()}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione a OS (opcional)" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {workOrders?.map((workOrder: any) => (
+                                <SelectItem key={workOrder.id} value={workOrder.id.toString()}>
+                                  OS #{workOrder.orderNumber} - {workOrder.description.substring(0, 30)}
+                                  {workOrder.description.length > 30 ? "..." : ""}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Ordem de serviço relacionada a esta transação
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
@@ -880,15 +882,20 @@ const Transactions = () => {
                 </TabsContent>
               </Tabs>
 
-              <DialogFooter>
+              <DialogFooter className="flex justify-end gap-2 pt-4 border-t mt-4">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setIsNewTransactionOpen(false)}
+                  className="min-w-[100px]"
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={createMutation.isPending}>
+                <Button 
+                  type="submit" 
+                  disabled={createMutation.isPending}
+                  className="min-w-[100px]"
+                >
                   {createMutation.isPending ? "Salvando..." : "Salvar"}
                 </Button>
               </DialogFooter>
