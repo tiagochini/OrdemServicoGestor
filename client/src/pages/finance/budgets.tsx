@@ -197,10 +197,20 @@ const Budgets = () => {
   // Processar o envio do formulário
   const onSubmit = async (values: z.infer<typeof budgetFormSchema>) => {
     try {
+      // Converter do formato do frontend para o formato esperado pelo backend
+      const budgetData = {
+        name: values.name,
+        category: values.category,
+        amount: values.amount,
+        periodStart: values.startDate,
+        periodEnd: values.endDate,
+        description: values.description || ""
+      };
+
       if (editingBudget) {
-        await updateMutation.mutateAsync({ id: editingBudget.id, data: values });
+        await updateMutation.mutateAsync({ id: editingBudget.id, data: budgetData });
       } else {
-        await createMutation.mutateAsync(values as InsertBudget);
+        await createMutation.mutateAsync(budgetData as InsertBudget);
       }
     } catch (error) {
       console.error("Erro ao enviar formulário:", error);
@@ -211,8 +221,8 @@ const Budgets = () => {
   const calculateActualSpending = (budget: any) => {
     if (!transactions) return 0;
     
-    const startDate = new Date(budget.startDate);
-    const endDate = new Date(budget.endDate);
+    const startDate = new Date(budget.periodStart);
+    const endDate = new Date(budget.periodEnd);
     
     return transactions
       .filter((transaction: any) => {
@@ -283,7 +293,7 @@ const Budgets = () => {
                     <div>
                       <CardTitle>{budget.name}</CardTitle>
                       <CardDescription>
-                        {formatCategory(budget.category)} - {new Date(budget.startDate).toLocaleDateString('pt-BR')} até {new Date(budget.endDate).toLocaleDateString('pt-BR')}
+                        {formatCategory(budget.category)} - {new Date(budget.periodStart).toLocaleDateString('pt-BR')} até {new Date(budget.periodEnd).toLocaleDateString('pt-BR')}
                       </CardDescription>
                     </div>
                     <div className="flex space-x-1">
@@ -385,7 +395,7 @@ const Budgets = () => {
                       <TableCell className="font-medium">{budget.name}</TableCell>
                       <TableCell>{formatCategory(budget.category)}</TableCell>
                       <TableCell>
-                        {new Date(budget.startDate).toLocaleDateString('pt-BR')} - {new Date(budget.endDate).toLocaleDateString('pt-BR')}
+                        {new Date(budget.periodStart).toLocaleDateString('pt-BR')} - {new Date(budget.periodEnd).toLocaleDateString('pt-BR')}
                       </TableCell>
                       <TableCell className="text-right">
                         {formatCurrency(parseFloat(budget.amount))}
