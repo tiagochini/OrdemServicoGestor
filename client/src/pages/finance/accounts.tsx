@@ -1,22 +1,33 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import { Building, CreditCard, Plus, Search, Check, X } from "lucide-react";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { InsertAccount } from "@shared/schema";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { queryClient } from "@/lib/queryClient";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+import { PlusCircle, RefreshCcw, Pencil, Trash2, DollarSign, AlertTriangle } from "lucide-react";
+import { z } from "zod";
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+};
 
 const Accounts = () => {
   const { toast } = useToast();
-  const [showNewDialog, setShowNewDialog] = useState(false);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  
-  // Query para obter contas
+  const [isNewAccountOpen, setIsNewAccountOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<any>(null);
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState<number | null>(null);
+
+  // Consultar todas as contas
   const { data: accounts, isLoading } = useQuery({
     queryKey: ["/api/accounts"],
     onError: (error: Error) => {
@@ -28,189 +39,484 @@ const Accounts = () => {
     },
   });
 
-  // Formatação de moeda
-  const formatCurrency = (value: string | number) => {
-    const numValue = typeof value === 'string' ? parseFloat(value) : value;
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(numValue);
-  };
-
-  // Altera status de uma conta
-  const toggleStatusMutation = useMutation({
-    mutationFn: async ({ id, isActive }: { id: number, isActive: boolean }) => {
-      const response = await fetch(`/api/accounts/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isActive }),
-      });
-      
+  // Mutação para criar nova conta
+  const createMutation = useMutation({
+    mutationFn: async (data: InsertAccount) => {
+      const response = await apiRequest("POST", "/api/accounts", data);
       if (!response.ok) {
-        throw new Error("Falha ao atualizar status da conta");
+        const error = await response.json();
+        throw new Error(error.message || "Erro ao criar conta");
       }
-      
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/accounts/balances"] });
       toast({
-        title: "Status atualizado",
-        description: "O status da conta foi atualizado com sucesso.",
+        title: "Conta criada",
+        description: "A conta foi criada com sucesso",
       });
+      setIsNewAccountOpen(false);
+      setEditingAccount(null);
     },
     onError: (error: Error) => {
       toast({
-        title: "Erro",
+        title: "Erro ao criar conta",
         description: error.message,
         variant: "destructive",
       });
     },
   });
 
-  // Handler para alterar o status
-  const handleToggleStatus = (id: number, currentStatus: boolean) => {
-    toggleStatusMutation.mutate({ id, isActive: !currentStatus });
-  };
-
-  // Filtrar contas com base na busca
-  const filteredAccounts = accounts?.filter(account => {
-    if (!searchQuery) return true;
-    
-    const query = searchQuery.toLowerCase();
-    return (
-      account.name.toLowerCase().includes(query) ||
-      account.type.toLowerCase().includes(query) ||
-      formatCurrency(account.balance).includes(query)
-    );
+  // Mutação para atualizar conta
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<InsertAccount> }) => {
+      const response = await apiRequest("PATCH", `/api/accounts/${id}`, data);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Erro ao atualizar conta");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/accounts/balances"] });
+      toast({
+        title: "Conta atualizada",
+        description: "A conta foi atualizada com sucesso",
+      });
+      setIsNewAccountOpen(false);
+      setEditingAccount(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao atualizar conta",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
+  // Mutação para excluir conta
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/accounts/${id}`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Erro ao excluir conta");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/accounts/balances"] });
+      toast({
+        title: "Conta excluída",
+        description: "A conta foi excluída com sucesso",
+      });
+      setIsConfirmDeleteOpen(false);
+      setAccountToDelete(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao excluir conta",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Esquema para validação do formulário
+  const accountFormSchema = z.object({
+    name: z.string().min(2, "O nome deve ter pelo menos 2 caracteres"),
+    type: z.string().min(1, "O tipo é obrigatório"),
+    bankName: z.string().optional(),
+    accountNumber: z.string().optional(),
+    agency: z.string().optional(),
+    balance: z.coerce.number().default(0),
+    description: z.string().optional(),
+  });
+
+  // Configuração do formulário
+  const form = useForm<z.infer<typeof accountFormSchema>>({
+    resolver: zodResolver(accountFormSchema),
+    defaultValues: {
+      name: editingAccount?.name || "",
+      type: editingAccount?.type || "checking",
+      bankName: editingAccount?.bankName || "",
+      accountNumber: editingAccount?.accountNumber || "",
+      agency: editingAccount?.agency || "",
+      balance: editingAccount?.balance || 0,
+      description: editingAccount?.description || "",
+    },
+  });
+
+  // Resetar form quando editingAccount muda
+  const resetForm = () => {
+    form.reset({
+      name: editingAccount?.name || "",
+      type: editingAccount?.type || "checking",
+      bankName: editingAccount?.bankName || "",
+      accountNumber: editingAccount?.accountNumber || "",
+      agency: editingAccount?.agency || "",
+      balance: editingAccount?.balance || 0,
+      description: editingAccount?.description || "",
+    });
+  };
+
+  // Manipular o clique em editar
+  const handleEdit = (account: any) => {
+    setEditingAccount(account);
+    setIsNewAccountOpen(true);
+    setTimeout(resetForm, 100); // Dar tempo para o estado ser atualizado
+  };
+
+  // Manipular o clique em excluir
+  const handleDelete = (accountId: number) => {
+    setAccountToDelete(accountId);
+    setIsConfirmDeleteOpen(true);
+  };
+
+  // Processar o envio do formulário
+  const onSubmit = async (values: z.infer<typeof accountFormSchema>) => {
+    try {
+      if (editingAccount) {
+        await updateMutation.mutateAsync({ id: editingAccount.id, data: values });
+      } else {
+        await createMutation.mutateAsync(values as InsertAccount);
+      }
+    } catch (error) {
+      console.error("Erro ao enviar formulário:", error);
+    }
+  };
+
+  // Formatar tipo de conta
+  const formatAccountType = (type: string) => {
+    const types: Record<string, string> = {
+      checking: "Conta Corrente",
+      savings: "Conta Poupança",
+      investment: "Investimento",
+      cash: "Caixa/Dinheiro",
+      credit: "Cartão de Crédito",
+      other: "Outro",
+    };
+    return types[type] || type;
+  };
+
   // Calcular saldo total
-  const totalBalance = filteredAccounts?.reduce((total, account) => {
-    return account.isActive ? total + parseFloat(account.balance) : total;
-  }, 0) || 0;
+  const calculateTotalBalance = () => {
+    if (!accounts) return 0;
+    return accounts.reduce((total: number, account: any) => {
+      return total + parseFloat(account.balance);
+    }, 0);
+  };
 
   return (
-    <div className="container mx-auto py-6 space-y-8">
+    <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Contas Bancárias</h1>
-        <Button onClick={() => setShowNewDialog(true)}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button onClick={() => { setEditingAccount(null); setIsNewAccountOpen(true); form.reset(); }}>
+          <PlusCircle className="mr-2 h-4 w-4" />
           Nova Conta
         </Button>
       </div>
 
-      {/* Resumo de contas */}
-      <div className="grid gap-4 md:grid-cols-3">
+      {/* Card de resumo */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Saldo Total</CardTitle>
-            <Building className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {isLoading ? "Carregando..." : formatCurrency(totalBalance)}
+              {isLoading ? "Carregando..." : formatCurrency(calculateTotalBalance())}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filtros e busca */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar contas..."
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-      </div>
+      {/* Tabela de contas */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle>Suas Contas</CardTitle>
+          <CardDescription>
+            Gerencie suas contas bancárias, caixa e investimentos
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <p>Carregando contas...</p>
+            </div>
+          ) : accounts?.length > 0 ? (
+            <div className="relative w-full overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Banco</TableHead>
+                    <TableHead>Agência/Conta</TableHead>
+                    <TableHead className="text-right">Saldo</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {accounts.map((account: any) => (
+                    <TableRow key={account.id}>
+                      <TableCell className="font-medium">{account.name}</TableCell>
+                      <TableCell>{formatAccountType(account.type)}</TableCell>
+                      <TableCell>{account.bankName || "--"}</TableCell>
+                      <TableCell>
+                        {account.agency && account.accountNumber
+                          ? `${account.agency} / ${account.accountNumber}`
+                          : account.accountNumber || "--"}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {formatCurrency(parseFloat(account.balance))}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(account)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(account.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-10">
+              <DollarSign className="mx-auto h-10 w-10 text-muted-foreground opacity-50" />
+              <h3 className="mt-2 text-lg font-semibold">Nenhuma conta cadastrada</h3>
+              <p className="text-muted-foreground mt-1">
+                Comece adicionando sua primeira conta bancária ou caixa.
+              </p>
+              <Button
+                className="mt-4"
+                onClick={() => {
+                  setEditingAccount(null);
+                  setIsNewAccountOpen(true);
+                  form.reset();
+                }}
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Adicionar Conta
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Lista de contas */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {isLoading ? (
-          Array(3).fill(0).map((_, index) => (
-            <Card key={index} className="opacity-50">
-              <CardHeader>
-                <CardTitle>Carregando...</CardTitle>
-                <CardDescription>Aguarde</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
-              </CardContent>
-            </Card>
-          ))
-        ) : filteredAccounts?.length ? (
-          filteredAccounts.map((account) => (
-            <Card key={account.id} className={!account.isActive ? "opacity-60" : ""}>
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle>{account.name}</CardTitle>
-                    <CardDescription>{account.type}</CardDescription>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id={`status-${account.id}`}
-                      checked={account.isActive}
-                      onCheckedChange={() => handleToggleStatus(account.id, account.isActive)}
-                    />
-                    <Label htmlFor={`status-${account.id}`}>
-                      {account.isActive ? (
-                        <Check className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <X className="h-4 w-4 text-gray-400" />
-                      )}
-                    </Label>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatCurrency(account.balance)}
-                </div>
-                {account.description && (
-                  <p className="text-sm text-muted-foreground mt-2">{account.description}</p>
-                )}
-              </CardContent>
-              <CardFooter className="border-t pt-3 flex justify-between">
-                <span className="text-xs text-muted-foreground">
-                  Última atualização: {new Date(account.updatedAt).toLocaleDateString('pt-BR')}
-                </span>
-                <Button variant="ghost" size="sm">
-                  Editar
-                </Button>
-              </CardFooter>
-            </Card>
-          ))
-        ) : (
-          <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-            <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium">Nenhuma conta encontrada</p>
-            <p className="text-sm text-muted-foreground">
-              {searchQuery
-                ? "Tente ajustar os termos de busca"
-                : "Cadastre contas para controlar seu saldo"}
-            </p>
-            <Button className="mt-4" onClick={() => setShowNewDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Conta
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Modal de nova conta */}
-      <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
-        <DialogContent>
+      {/* Modal para Nova/Editar Conta */}
+      <Dialog open={isNewAccountOpen} onOpenChange={setIsNewAccountOpen}>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Nova Conta</DialogTitle>
+            <DialogTitle>
+              {editingAccount ? "Editar Conta" : "Nova Conta"}
+            </DialogTitle>
             <DialogDescription>
-              Adicione uma nova conta bancária ou caixa para controle financeiro.
+              {editingAccount
+                ? "Atualize as informações da conta selecionada."
+                : "Adicione uma nova conta bancária ao sistema."}
             </DialogDescription>
           </DialogHeader>
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">Formulário será implementado em breve</p>
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome da Conta</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: Conta Principal" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Nome que identifica facilmente a conta
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de Conta</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="checking">Conta Corrente</SelectItem>
+                        <SelectItem value="savings">Conta Poupança</SelectItem>
+                        <SelectItem value="investment">Investimento</SelectItem>
+                        <SelectItem value="cash">Caixa/Dinheiro</SelectItem>
+                        <SelectItem value="credit">Cartão de Crédito</SelectItem>
+                        <SelectItem value="other">Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="bankName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Banco</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nome do banco" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="balance"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Saldo Inicial (R$)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0,00"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="agency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Agência</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Número da agência" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="accountNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número da Conta</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Número da conta" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Informações adicionais sobre a conta"
+                        className="resize-none"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter className="pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsNewAccountOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                >
+                  {createMutation.isPending || updateMutation.isPending ? "Salvando..." : "Salvar"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de confirmação de exclusão */}
+      <Dialog open={isConfirmDeleteOpen} onOpenChange={setIsConfirmDeleteOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <AlertTriangle className="h-5 w-5 text-destructive mr-2" />
+              Confirmar exclusão
+            </DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir esta conta? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              A exclusão desta conta irá remover permanentemente todos os seus dados do sistema,
+              incluindo o histórico de transações associado a ela.
+            </p>
           </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsConfirmDeleteOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => accountToDelete && deleteMutation.mutate(accountToDelete)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Excluindo..." : "Excluir Conta"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
