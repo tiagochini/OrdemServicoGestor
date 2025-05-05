@@ -9,10 +9,14 @@ import {
   insertTransactionSchema,
   insertAccountSchema,
   insertBudgetSchema,
+  insertCatalogItemSchema,
+  insertWorkOrderItemSchema,
   OrderStatus,
   TransactionStatus,
   TransactionType,
   TransactionCategory,
+  ItemType,
+  UnitType,
   insertUserSchema 
 } from "@shared/schema";
 import { ZodError } from "zod";
@@ -550,6 +554,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: 'Failed to delete budget' });
+    }
+  });
+
+  // Catalog routes
+  app.get('/api/catalog', async (req, res) => {
+    try {
+      const { type, tags } = req.query;
+      
+      let items;
+      if (type) {
+        items = await storage.getCatalogItemsByType(type as string);
+      } else if (tags) {
+        // Convert comma-separated tags to array
+        const tagsArray = (tags as string).split(',').map(tag => tag.trim());
+        items = await storage.getCatalogItemsByTags(tagsArray);
+      } else {
+        items = await storage.getCatalogItems();
+      }
+      
+      res.json(items);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch catalog items' });
+    }
+  });
+
+  app.get('/api/catalog/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const item = await storage.getCatalogItem(id);
+      
+      if (!item) {
+        return res.status(404).json({ message: 'Catalog item not found' });
+      }
+      
+      res.json(item);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch catalog item' });
+    }
+  });
+
+  app.post('/api/catalog', isAuthenticated, async (req, res) => {
+    try {
+      const itemData = insertCatalogItemSchema.parse(req.body);
+      const item = await storage.createCatalogItem(itemData);
+      res.status(201).json(item);
+    } catch (error) {
+      handleZodError(error, res);
+    }
+  });
+
+  app.put('/api/catalog/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const itemData = insertCatalogItemSchema.partial().parse(req.body);
+      const item = await storage.updateCatalogItem(id, itemData);
+      
+      if (!item) {
+        return res.status(404).json({ message: 'Catalog item not found' });
+      }
+      
+      res.json(item);
+    } catch (error) {
+      handleZodError(error, res);
+    }
+  });
+
+  app.delete('/api/catalog/:id', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteCatalogItem(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: 'Catalog item not found' });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to delete catalog item' });
+    }
+  });
+
+  // Work Order Items routes
+  app.get('/api/work-orders/:id/items', async (req, res) => {
+    try {
+      const workOrderId = parseInt(req.params.id);
+      const items = await storage.getWorkOrderItems(workOrderId);
+      res.json(items);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch work order items' });
+    }
+  });
+
+  app.post('/api/work-order-items', isAuthenticated, async (req, res) => {
+    try {
+      const itemData = insertWorkOrderItemSchema.parse(req.body);
+      const item = await storage.createWorkOrderItem(itemData);
+      res.status(201).json(item);
+    } catch (error) {
+      handleZodError(error, res);
+    }
+  });
+
+  app.put('/api/work-order-items/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const itemData = insertWorkOrderItemSchema.partial().parse(req.body);
+      const item = await storage.updateWorkOrderItem(id, itemData);
+      
+      if (!item) {
+        return res.status(404).json({ message: 'Work order item not found' });
+      }
+      
+      res.json(item);
+    } catch (error) {
+      handleZodError(error, res);
+    }
+  });
+
+  app.delete('/api/work-order-items/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteWorkOrderItem(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: 'Work order item not found' });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to delete work order item' });
     }
   });
 
