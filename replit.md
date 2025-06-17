@@ -148,6 +148,12 @@ This is a comprehensive Service Management System built with modern web technolo
   - Formatação profissional com cores diferenciadas por tipo de relatório
   - PDFs incluem cabeçalhos, dados filtrados por período, métricas detalhadas
   - Download automático com nomes únicos baseados na data
+  - **BOTÃO "EXPORTAR RELATÓRIO" DA PÁGINA FINANCE/REPORTS CORRIGIDO**
+  - Implementada geração de PDF específica para relatórios financeiros detalhados
+  - Suporte para 4 tipos: Fluxo de Caixa, DRE, Orçamento vs Real, Saldos das Contas
+  - Cores específicas por tipo de relatório para identificação visual
+  - Conteúdo dinâmico baseado nos dados carregados de cada relatório
+  - Estados de carregamento "Gerando PDF..." durante processamento
 
 ## User Preferences
 

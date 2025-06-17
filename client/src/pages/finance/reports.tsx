@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import jsPDF from 'jspdf';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,6 +27,7 @@ const Reports = () => {
     from: startOfMonth(new Date()),
     to: endOfMonth(new Date())
   });
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   // Determinar a data inicial com base no período selecionado
   const getReportDates = () => {
@@ -155,13 +157,219 @@ const Reports = () => {
     return `${format(new Date(startDate), 'dd/MM/yyyy')} - ${format(new Date(endDate), 'dd/MM/yyyy')}`;
   };
 
+  const generateFinancialReportPDF = async () => {
+    try {
+      setIsGeneratingPDF(true);
+      
+      const pdf = new jsPDF();
+      const pageWidth = pdf.internal.pageSize.width;
+      const pageHeight = pdf.internal.pageSize.height;
+      
+      // Configurar cores baseadas no tipo de relatório
+      const colors = {
+        'cash-flow': [67, 56, 202], // Indigo
+        'profit-loss': [220, 38, 127], // Pink
+        'budget-vs-actual': [16, 185, 129], // Emerald
+        'account-balances': [245, 158, 11] // Amber
+      };
+      
+      const [r, g, b] = colors[reportType as keyof typeof colors] || [67, 56, 202];
+      
+      // Cabeçalho
+      pdf.setFillColor(r, g, b);
+      pdf.rect(0, 0, pageWidth, 40, 'F');
+      
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(20);
+      pdf.text('SISTEMA DE GESTÃO FINANCEIRA', 20, 25);
+      
+      // Título do relatório
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(16);
+      let reportTitle = '';
+      switch (reportType) {
+        case 'cash-flow': reportTitle = 'Relatório de Fluxo de Caixa'; break;
+        case 'profit-loss': reportTitle = 'Demonstração de Resultados (DRE)'; break;
+        case 'budget-vs-actual': reportTitle = 'Orçamento vs Valores Reais'; break;
+        case 'account-balances': reportTitle = 'Saldos das Contas'; break;
+      }
+      pdf.text(reportTitle, 20, 55);
+      
+      // Período
+      pdf.setFontSize(12);
+      pdf.text(`Período: ${formatPeriodDisplay()}`, 20, 70);
+      pdf.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: pt })}`, 20, 85);
+      
+      let yPosition = 100;
+      
+      // Conteúdo baseado no tipo de relatório
+      if (reportType === 'cash-flow' && cashFlowData) {
+        // Resumo do Fluxo de Caixa
+        pdf.setFontSize(14);
+        pdf.text('RESUMO EXECUTIVO', 20, yPosition);
+        yPosition += 20;
+        
+        pdf.setFontSize(12);
+        pdf.text(`Receitas Totais: ${formatCurrency(cashFlowData.totalIncome)}`, 20, yPosition);
+        yPosition += 15;
+        pdf.text(`Despesas Totais: ${formatCurrency(cashFlowData.totalExpense)}`, 20, yPosition);
+        yPosition += 15;
+        pdf.text(`Resultado Líquido: ${formatCurrency(cashFlowData.netCashFlow)}`, 20, yPosition);
+        yPosition += 25;
+        
+        // Receitas por categoria
+        if (cashFlowData.incomeByCategory && Object.keys(cashFlowData.incomeByCategory).length > 0) {
+          pdf.setFontSize(14);
+          pdf.text('RECEITAS POR CATEGORIA', 20, yPosition);
+          yPosition += 15;
+          
+          pdf.setFontSize(11);
+          Object.entries(cashFlowData.incomeByCategory).forEach(([category, amount]) => {
+            pdf.text(`• ${category}: ${formatCurrency(amount as number)}`, 25, yPosition);
+            yPosition += 12;
+          });
+          yPosition += 10;
+        }
+        
+        // Despesas por categoria
+        if (cashFlowData.expenseByCategory && Object.keys(cashFlowData.expenseByCategory).length > 0) {
+          pdf.setFontSize(14);
+          pdf.text('DESPESAS POR CATEGORIA', 20, yPosition);
+          yPosition += 15;
+          
+          pdf.setFontSize(11);
+          Object.entries(cashFlowData.expenseByCategory).forEach(([category, amount]) => {
+            pdf.text(`• ${category}: ${formatCurrency(amount as number)}`, 25, yPosition);
+            yPosition += 12;
+          });
+        }
+      }
+      
+      else if (reportType === 'profit-loss' && profitLossData) {
+        // DRE
+        pdf.setFontSize(14);
+        pdf.text('DEMONSTRAÇÃO DE RESULTADOS', 20, yPosition);
+        yPosition += 20;
+        
+        pdf.setFontSize(12);
+        pdf.text(`Receita Bruta: ${formatCurrency(profitLossData.revenue)}`, 20, yPosition);
+        yPosition += 15;
+        pdf.text(`(-) Despesas Operacionais: ${formatCurrency(profitLossData.expenses)}`, 20, yPosition);
+        yPosition += 15;
+        pdf.text(`Resultado do Período: ${formatCurrency(profitLossData.profit)}`, 20, yPosition);
+        yPosition += 25;
+        
+        // Análise
+        pdf.setFontSize(14);
+        pdf.text('ANÁLISE DE RESULTADOS', 20, yPosition);
+        yPosition += 15;
+        
+        pdf.setFontSize(11);
+        const margin = profitLossData.revenue > 0 ? ((profitLossData.profit / profitLossData.revenue) * 100).toFixed(1) : '0';
+        pdf.text(`• Margem de Lucro: ${margin}%`, 25, yPosition);
+        yPosition += 12;
+        
+        const status = profitLossData.profit >= 0 ? 'POSITIVO' : 'NEGATIVO';
+        pdf.text(`• Status do Resultado: ${status}`, 25, yPosition);
+      }
+      
+      else if (reportType === 'budget-vs-actual' && budgetVsActualData) {
+        pdf.setFontSize(14);
+        pdf.text('ORÇAMENTO VS VALORES REAIS', 20, yPosition);
+        yPosition += 20;
+        
+        if (budgetVsActualData.length > 0) {
+          pdf.setFontSize(11);
+          budgetVsActualData.forEach((item: any) => {
+            pdf.text(`${item.category}:`, 20, yPosition);
+            yPosition += 12;
+            pdf.text(`  Orçado: ${formatCurrency(item.budgeted)}`, 25, yPosition);
+            yPosition += 12;
+            pdf.text(`  Realizado: ${formatCurrency(item.actual)}`, 25, yPosition);
+            yPosition += 12;
+            pdf.text(`  Variação: ${formatCurrency(item.variance)}`, 25, yPosition);
+            yPosition += 15;
+          });
+        } else {
+          pdf.setFontSize(12);
+          pdf.text('Nenhum dado de orçamento disponível para o período selecionado.', 20, yPosition);
+        }
+      }
+      
+      else if (reportType === 'account-balances' && accountBalancesData) {
+        pdf.setFontSize(14);
+        pdf.text('SALDOS DAS CONTAS', 20, yPosition);
+        yPosition += 20;
+        
+        pdf.setFontSize(12);
+        pdf.text(`Saldo Total: ${formatCurrency(accountBalancesData.totalBalance)}`, 20, yPosition);
+        yPosition += 25;
+        
+        if (accountBalancesData.accounts && accountBalancesData.accounts.length > 0) {
+          pdf.setFontSize(14);
+          pdf.text('DETALHAMENTO POR CONTA', 20, yPosition);
+          yPosition += 15;
+          
+          pdf.setFontSize(11);
+          accountBalancesData.accounts.forEach((account: any) => {
+            const accountType = {
+              'checking': 'Conta Corrente',
+              'savings': 'Conta Poupança',
+              'investment': 'Investimento',
+              'cash': 'Caixa/Dinheiro',
+              'credit': 'Cartão de Crédito',
+              'other': 'Outro'
+            }[account.type] || account.type;
+            
+            pdf.text(`• ${account.name} (${accountType}): ${formatCurrency(parseFloat(account.balance))}`, 25, yPosition);
+            yPosition += 12;
+          });
+        } else {
+          pdf.setFontSize(12);
+          pdf.text('Nenhuma conta cadastrada no sistema.', 20, yPosition);
+        }
+      }
+      
+      // Rodapé
+      const footerY = pageHeight - 20;
+      pdf.setFontSize(8);
+      pdf.setTextColor(128, 128, 128);
+      pdf.text('Sistema de Gestão Financeira - Relatório Gerado Automaticamente', 20, footerY);
+      pdf.text(`Página 1 de 1`, pageWidth - 40, footerY);
+      
+      // Download do PDF
+      const timestamp = format(new Date(), 'yyyy-MM-dd-HHmm');
+      const filename = `relatorio-${reportType}-${timestamp}.pdf`;
+      pdf.save(filename);
+      
+      toast({
+        title: "PDF gerado com sucesso!",
+        description: `O relatório ${reportTitle.toLowerCase()} foi baixado.`,
+      });
+      
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        title: "Erro ao gerar PDF",
+        description: "Ocorreu um erro ao gerar o relatório. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Relatórios Financeiros</h1>
-        <Button variant="outline" disabled={isLoading}>
+        <Button 
+          variant="outline" 
+          disabled={isLoading || isGeneratingPDF}
+          onClick={generateFinancialReportPDF}
+        >
           <Download className="mr-2 h-4 w-4" />
-          Exportar Relatório
+          {isGeneratingPDF ? 'Gerando PDF...' : 'Exportar Relatório'}
         </Button>
       </div>
 
