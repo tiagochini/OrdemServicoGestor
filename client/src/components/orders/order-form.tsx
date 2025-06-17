@@ -201,8 +201,8 @@ const OrderForm = ({ isOpen, onClose, orderId }: OrderFormProps) => {
                   <FormLabel>Técnico</FormLabel>
                   <Select
                     disabled={isLoading}
-                    value={field.value?.toString() || ""}
-                    onValueChange={(value) => field.onChange(value ? parseInt(value) : null)}
+                    value={field.value?.toString() || "0"}
+                    onValueChange={(value) => field.onChange(value === "0" ? null : parseInt(value))}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -210,7 +210,7 @@ const OrderForm = ({ isOpen, onClose, orderId }: OrderFormProps) => {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Não atribuído</SelectItem>
+                      <SelectItem value="0">Não atribuído</SelectItem>
                       {technicians?.map((technician) => (
                         <SelectItem key={technician.id} value={technician.id.toString()}>
                           {technician.name}
