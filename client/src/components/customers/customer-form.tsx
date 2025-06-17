@@ -46,17 +46,21 @@ const CustomerForm = ({ isOpen, onClose, customerId, onSuccess }: CustomerFormPr
   const isEdit = !!customerId;
 
   // Fetch customer data for edit mode
-  const { data: customer, isLoading: isLoadingCustomer } = useQuery<Customer>({
+  const { data: customer, isLoading: isLoadingCustomer, error } = useQuery<Customer>({
     queryKey: ['/api/customers', customerId],
     enabled: !!customerId,
-    onError: (error: Error) => {
+  });
+
+  // Handle error with toast
+  useEffect(() => {
+    if (error) {
       toast({
         title: "Erro ao carregar cliente",
         description: error.message,
         variant: "destructive"
       });
     }
-  });
+  }, [error, toast]);
 
   // Form setup
   const form = useForm<CustomerFormData>({
@@ -76,15 +80,16 @@ const CustomerForm = ({ isOpen, onClose, customerId, onSuccess }: CustomerFormPr
   // Reset form when customer data is loaded (edit mode)
   useEffect(() => {
     if (isEdit && customer) {
+      const customerData = customer as any; // Type assertion for compatibility
       form.reset({
-        name: customer.name || "",
-        email: customer.email || "",
-        phone: customer.phone || "",
-        address: customer.address || "",
-        city: customer.city || "",
-        state: customer.state || "",
-        zipCode: customer.zipCode || "",
-        company: customer.company || "",
+        name: customerData.name || "",
+        email: customerData.email || "",
+        phone: customerData.phone || "",
+        address: customerData.address || "",
+        city: customerData.city || "",
+        state: customerData.state || "",
+        zipCode: customerData.zipCode || "",
+        company: customerData.company || "",
       });
     } else if (!isEdit) {
       // Reset form for create mode

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Search, Plus, Mail, Phone, MapPin, Building } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import CustomerForm from "@/components/customers/customer-form";
 import type { Customer } from "@shared/schema";
 
 const CustomersPage = () => {
@@ -17,6 +18,7 @@ const CustomersPage = () => {
   const [cityFilter, setCityFilter] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
   const customersPerPage = 12;
 
@@ -49,7 +51,7 @@ const CustomersPage = () => {
   });
 
   // Get unique cities for filter dropdown
-  const uniqueCities = Array.from(new Set(customers.map(customer => customer.city).filter(Boolean)));
+  const uniqueCities = Array.from(new Set(customers.map(customer => customer.city).filter(Boolean))) as string[];
 
   // Calculate pagination
   const indexOfLastCustomer = currentPage * customersPerPage;
@@ -94,11 +96,9 @@ const CustomersPage = () => {
               Gerencie seus clientes e visualize informações de contato
             </p>
           </div>
-          <Button asChild>
-            <Link href="/customers/new" className="inline-flex items-center">
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Cliente
-            </Link>
+          <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Cliente
           </Button>
         </div>
 
@@ -129,7 +129,7 @@ const CustomersPage = () => {
                   <SelectContent>
                     <SelectItem value="">Todas as cidades</SelectItem>
                     {uniqueCities.map((city) => (
-                      <SelectItem key={city} value={city}>
+                      <SelectItem key={city} value={city || ""}>
                         {city}
                       </SelectItem>
                     ))}
