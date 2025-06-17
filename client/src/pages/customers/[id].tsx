@@ -180,54 +180,74 @@ const CustomerDetailPage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {customer.email && (
-                <div className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Email</p>
-                    <p className="text-sm text-muted-foreground">{customer.email}</p>
-                  </div>
+              {/* Nome do cliente - sempre mostrado */}
+              <div className="flex items-center gap-3">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Nome</p>
+                  <p className="text-sm text-muted-foreground">{customer.name}</p>
                 </div>
-              )}
+              </div>
+
+              {/* ID do cliente - sempre mostrado */}
+              <div className="flex items-center gap-3">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">ID do Cliente</p>
+                  <p className="text-sm text-muted-foreground">#{customer.id}</p>
+                </div>
+              </div>
               
-              {customer.phone && (
-                <div className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Telefone</p>
-                    <p className="text-sm text-muted-foreground">{customer.phone}</p>
-                  </div>
+              {/* Email - só mostra se existir */}
+              <div className="flex items-center gap-3">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Email</p>
+                  <p className="text-sm text-muted-foreground">{customer.email || 'Não informado'}</p>
                 </div>
-              )}
+              </div>
               
-              {customer.company && (
-                <div className="flex items-center gap-3">
-                  <Building className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Empresa</p>
-                    <p className="text-sm text-muted-foreground">{customer.company}</p>
-                  </div>
+              {/* Telefone - sempre mostra */}
+              <div className="flex items-center gap-3">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Telefone</p>
+                  <p className="text-sm text-muted-foreground">{customer.phone || 'Não informado'}</p>
                 </div>
-              )}
+              </div>
               
-              {(customer.address || customer.city || customer.state || customer.zipCode) && (
-                <div className="flex items-start gap-3">
-                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">Endereço</p>
-                    <div className="text-sm text-muted-foreground">
-                      {customer.address && <p>{customer.address}</p>}
-                      {(customer.city || customer.state || customer.zipCode) && (
-                        <p>
-                          {[customer.city, customer.state, customer.zipCode]
-                            .filter(Boolean)
-                            .join(', ')}
-                        </p>
-                      )}
-                    </div>
+              {/* Empresa - sempre mostra */}
+              <div className="flex items-center gap-3">
+                <Building className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">Empresa</p>
+                  <p className="text-sm text-muted-foreground">{customer.company || 'Não informado'}</p>
+                </div>
+              </div>
+              
+              {/* Endereço - sempre mostra */}
+              <div className="flex items-start gap-3">
+                <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">Endereço</p>
+                  <div className="text-sm text-muted-foreground">
+                    {customer.address ? (
+                      <p>{customer.address}</p>
+                    ) : (
+                      <p>Não informado</p>
+                    )}
+                    {(customer.city || customer.state || customer.zipCode) ? (
+                      <p>
+                        {[customer.city, customer.state, customer.zipCode]
+                          .filter(Boolean)
+                          .join(', ')}
+                      </p>
+                    ) : (
+                      <p>Cidade/Estado não informado</p>
+                    )}
                   </div>
                 </div>
-              )}
+              </div>
             </CardContent>
           </Card>
 
