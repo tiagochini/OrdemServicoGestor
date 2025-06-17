@@ -13,7 +13,8 @@ import TechnicianDetails from "@/pages/technicians/[id]";
 import CustomersList from "@/pages/customers";
 import CustomerDetails from "@/pages/customers/[id]";
 import Settings from "@/pages/settings";
-import AuthPage from "@/pages/auth-page";
+import Login from "@/pages/Login";
+import ChangePassword from "@/pages/ChangePassword";
 import FinanceOverview from "@/pages/finance";
 import Transactions from "@/pages/finance/transactions";
 import AccountsPayable from "@/pages/finance/accounts-payable";
@@ -26,12 +27,37 @@ import Catalog from "@/pages/catalog";
 import CatalogItemDetails from "@/pages/catalog/[id]";
 import NewCatalogItem from "@/pages/catalog/new";
 import EditCatalogItem from "@/pages/catalog/edit/[id]";
-import { ProtectedRoute } from "./lib/protected-route";
-import { AuthProvider } from "@/hooks/use-auth";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+
+function ProtectedRoute({ path, component: Component }: { path: string; component: React.ComponentType }) {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+  
+  if (!isAuthenticated) {
+    return <Route path={path}><Login /></Route>;
+  }
+  
+  if (user?.mustChangePassword) {
+    return <Route path={path}><ChangePassword /></Route>;
+  }
+  
+  return <Route path={path} component={Component} />;
+}
 
 function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+  
   return (
     <Switch>
+      <Route path="/login" component={Login} />
+      <Route path="/change-password" component={ChangePassword} />
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/orders" component={OrdersList} />
@@ -53,9 +79,34 @@ function Router() {
       <ProtectedRoute path="/catalog/edit/:id" component={EditCatalogItem} />
       <ProtectedRoute path="/catalog/:id" component={CatalogItemDetails} />
       <ProtectedRoute path="/settings" component={Settings} />
-      <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
+  );
+}
+
+function AppContent() {
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+  
+  if (!isAuthenticated) {
+    return (
+      <TooltipProvider>
+        <Toaster />
+        <Router />
+      </TooltipProvider>
+    );
+  }
+  
+  return (
+    <TooltipProvider>
+      <Toaster />
+      <MainLayout>
+        <Router />
+      </MainLayout>
+    </TooltipProvider>
   );
 }
 
@@ -63,12 +114,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <MainLayout>
-            <Router />
-          </MainLayout>
-        </TooltipProvider>
+        <AppContent />
       </AuthProvider>
     </QueryClientProvider>
   );

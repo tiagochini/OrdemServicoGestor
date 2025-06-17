@@ -44,11 +44,22 @@ export default function Login() {
   });
 
   const loginMutation = useMutation({
-    mutationFn: (data: LoginForm) => 
-      apiRequest<LoginResponse>('/api/auth/login', {
+    mutationFn: async (data: LoginForm) => {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(data),
-      }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Login failed');
+      }
+      
+      return response.json() as Promise<LoginResponse>;
+    },
     onSuccess: (data) => {
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));

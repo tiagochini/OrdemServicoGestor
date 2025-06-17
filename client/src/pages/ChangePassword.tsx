@@ -38,15 +38,23 @@ export default function ChangePassword() {
   });
 
   const changePasswordMutation = useMutation({
-    mutationFn: (data: Omit<ChangePasswordForm, 'confirmPassword'>) => {
+    mutationFn: async (data: Omit<ChangePasswordForm, 'confirmPassword'>) => {
       const token = localStorage.getItem('authToken');
-      return apiRequest('/api/auth/change-password', {
+      const response = await fetch('/api/auth/change-password', {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(data),
       });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to change password');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       setSuccess('Password changed successfully');
