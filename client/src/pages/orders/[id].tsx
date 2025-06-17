@@ -6,6 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { OrderStatus } from "@shared/schema";
@@ -23,7 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ChevronLeft, Edit, Trash, Clock, ArrowRight, CheckCircle, XCircle } from "lucide-react";
+import { ChevronLeft, Edit, Trash, Clock, ArrowRight, CheckCircle, XCircle, Plus, Package, ShoppingCart } from "lucide-react";
 
 const OrderDetails = () => {
   const params = useParams<{ id: string }>();
@@ -32,6 +36,11 @@ const OrderDetails = () => {
   const { toast } = useToast();
   const [newNote, setNewNote] = useState("");
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+  const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
+  const [selectedCatalogItem, setSelectedCatalogItem] = useState<any>(null);
+  const [itemQuantity, setItemQuantity] = useState("1");
+  const [itemDiscount, setItemDiscount] = useState("0");
+  const [itemNotes, setItemNotes] = useState("");
   
   // Fetch work order details
   const { data: workOrder, isLoading } = useQuery<any>({
@@ -61,6 +70,16 @@ const OrderDetails = () => {
   // Fetch notes
   const { data: notes = [], refetch: refetchNotes } = useQuery<any[]>({
     queryKey: ['/api/work-orders', orderId, 'notes'],
+  });
+  
+  // Fetch work order items
+  const { data: workOrderItems = [], refetch: refetchItems } = useQuery<any[]>({
+    queryKey: ['/api/work-orders', orderId, 'items'],
+  });
+  
+  // Fetch catalog items for selection
+  const { data: catalogItems = [] } = useQuery<any[]>({
+    queryKey: ['/api/catalog'],
   });
   
   // Create note mutation
@@ -108,6 +127,51 @@ const OrderDetails = () => {
       });
     }
   });
+
+  // Add work order item mutation
+  const addItemMutation = useMutation({
+    mutationFn: async (itemData: { workOrderId: number, catalogItemId: number, quantity: number, unitPrice: number, discount?: number, notes?: string }) => {
+      const response = await apiRequest('POST', '/api/work-order-items', itemData);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Item adicionado",
+        description: "O item foi adicionado à ordem de serviço com sucesso.",
+      });
+      refetchItems();
+      setIsAddItemDialogOpen(false);
+      resetItemForm();
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar o item à ordem de serviço.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Remove work order item mutation
+  const removeItemMutation = useMutation({
+    mutationFn: async (itemId: number) => {
+      await apiRequest('DELETE', `/api/work-order-items/${itemId}`, undefined);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Item removido",
+        description: "O item foi removido da ordem de serviço com sucesso.",
+      });
+      refetchItems();
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível remover o item da ordem de serviço.",
+        variant: "destructive",
+      });
+    }
+  });
   
   // Format date
   const formatDate = (dateString: string) => {
@@ -127,6 +191,61 @@ const OrderDetails = () => {
       content: newNote.trim(),
       createdBy: "Usuário atual", // In a real app, this would come from auth context
     });
+  };
+
+  // Reset item form
+  const resetItemForm = () => {
+    setSelectedCatalogItem(null);
+    setItemQuantity("1");
+    setItemDiscount("0");
+    setItemNotes("");
+  };
+
+  // Handle add item to work order
+  const handleAddItem = () => {
+    if (!selectedCatalogItem) return;
+    
+    const quantity = parseFloat(itemQuantity);
+    const discount = parseFloat(itemDiscount) || 0;
+    
+    if (quantity <= 0) {
+      toast({
+        title: "Erro",
+        description: "A quantidade deve ser maior que zero.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    addItemMutation.mutate({
+      workOrderId: orderId,
+      catalogItemId: selectedCatalogItem.id,
+      quantity,
+      unitPrice: selectedCatalogItem.price,
+      discount: discount > 0 ? discount : undefined,
+      notes: itemNotes.trim() || undefined,
+    });
+  };
+
+  // Calculate subtotal for work order items
+  const calculateSubtotal = () => {
+    return workOrderItems.reduce((total: number, item: any) => {
+      const itemSubtotal = (item.quantity * item.unitPrice) - (item.discount || 0);
+      return total + itemSubtotal;
+    }, 0);
+  };
+
+  // Format currency
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  // Get catalog item by ID
+  const getCatalogItemById = (id: number) => {
+    return catalogItems.find((item: any) => item.id === id);
   };
   
   // Helper to get status badge class
@@ -287,6 +406,187 @@ const OrderDetails = () => {
                 )}
               </dl>
             </div>
+          </div>
+
+          {/* Work Order Items Section */}
+          <div className="px-4 py-5 bg-gray-50 sm:p-6 border-t border-gray-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg leading-6 font-medium text-gray-900 flex items-center">
+                <Package className="h-5 w-5 mr-2" />
+                Itens da Ordem de Serviço
+              </h3>
+              <Dialog open={isAddItemDialogOpen} onOpenChange={setIsAddItemDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Adicionar Item
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Adicionar Item do Catálogo</DialogTitle>
+                    <DialogDescription>
+                      Selecione um produto ou serviço do catálogo para adicionar à ordem de serviço.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="catalog-item">Item do Catálogo</Label>
+                      <Select value={selectedCatalogItem?.id?.toString() || ""} onValueChange={(value) => {
+                        const item = catalogItems.find((item: any) => item.id.toString() === value);
+                        setSelectedCatalogItem(item);
+                      }}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um item..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {catalogItems.map((item: any) => (
+                            <SelectItem key={item.id} value={item.id.toString()}>
+                              <div className="flex flex-col">
+                                <span>{item.name}</span>
+                                <span className="text-sm text-gray-500">
+                                  {item.type === 'product' ? 'Produto' : 'Serviço'} - {formatCurrency(item.price)}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="quantity">Quantidade</Label>
+                        <Input
+                          id="quantity"
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={itemQuantity}
+                          onChange={(e) => setItemQuantity(e.target.value)}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="discount">Desconto (R$)</Label>
+                        <Input
+                          id="discount"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={itemDiscount}
+                          onChange={(e) => setItemDiscount(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    
+                    {selectedCatalogItem && (
+                      <div className="grid gap-2">
+                        <Label>Preço Unitário</Label>
+                        <div className="text-lg font-semibold text-green-600">
+                          {formatCurrency(selectedCatalogItem.price)}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="grid gap-2">
+                      <Label htmlFor="item-notes">Observações (opcional)</Label>
+                      <Textarea
+                        id="item-notes"
+                        placeholder="Observações sobre este item..."
+                        value={itemNotes}
+                        onChange={(e) => setItemNotes(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsAddItemDialogOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button 
+                      onClick={handleAddItem}
+                      disabled={!selectedCatalogItem || addItemMutation.isPending}
+                    >
+                      {addItemMutation.isPending ? "Adicionando..." : "Adicionar Item"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {workOrderItems.length === 0 ? (
+              <div className="text-center py-8 bg-white rounded-md border-2 border-dashed border-gray-300">
+                <ShoppingCart className="mx-auto h-12 w-12 text-gray-400" />
+                <p className="mt-2 text-gray-500">Nenhum item adicionado à ordem de serviço.</p>
+                <p className="text-sm text-gray-400">Adicione produtos ou serviços do catálogo.</p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead className="text-right">Qtd</TableHead>
+                      <TableHead className="text-right">Preço Unit.</TableHead>
+                      <TableHead className="text-right">Desconto</TableHead>
+                      <TableHead className="text-right">Subtotal</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {workOrderItems.map((item: any) => {
+                      const catalogItem = getCatalogItemById(item.catalogItemId);
+                      const subtotal = (item.quantity * item.unitPrice) - (item.discount || 0);
+                      
+                      return (
+                        <TableRow key={item.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{catalogItem?.name}</div>
+                              {item.notes && (
+                                <div className="text-sm text-gray-500">{item.notes}</div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={catalogItem?.type === 'product' ? 'default' : 'secondary'}>
+                              {catalogItem?.type === 'product' ? 'Produto' : 'Serviço'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">{item.quantity}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(item.unitPrice)}</TableCell>
+                          <TableCell className="text-right">
+                            {item.discount > 0 ? formatCurrency(item.discount) : '—'}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {formatCurrency(subtotal)}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeItemMutation.mutate(item.id)}
+                              disabled={removeItemMutation.isPending}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+                
+                <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-base font-medium text-gray-900">Total Geral:</span>
+                    <span className="text-xl font-bold text-green-600">
+                      {formatCurrency(calculateSubtotal())}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Notes Section */}
