@@ -15,6 +15,7 @@ export type OrderStatusType = typeof OrderStatus[keyof typeof OrderStatus];
 // User role enum
 export const UserRole = {
   ADMIN: "admin",
+  MANAGER: "manager",
   TECHNICIAN: "technician",
   CUSTOMER: "customer",
 } as const;
@@ -83,6 +84,7 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   email: text("email"),
   role: text("role").notNull().default(UserRole.CUSTOMER),
+  mustChangePassword: boolean("must_change_password").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   relatedId: integer("related_id"),
 });
@@ -245,15 +247,27 @@ export const insertUserSchema = createInsertSchema(users)
   .omit({
     id: true,
     createdAt: true,
+    password: true,
+    mustChangePassword: true,
   })
   .extend({
-    role: z.enum([UserRole.ADMIN, UserRole.TECHNICIAN, UserRole.CUSTOMER]),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
+    role: z.enum([UserRole.ADMIN, UserRole.MANAGER, UserRole.TECHNICIAN, UserRole.CUSTOMER]),
   });
+
+// Schema for password change
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(6, "New password must be at least 6 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+// Schema for forgot password
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Please enter a valid email"),
+});
 
 // Login schema
 export const loginSchema = z.object({
@@ -381,8 +395,10 @@ export const insertWorkOrderItemSchema = createInsertSchema(workOrderItems).omit
 
 // Types
 export type User = typeof users.$inferSelect;
-export type InsertUser = Omit<z.infer<typeof insertUserSchema>, 'confirmPassword'>;
+export type InsertUser = z.infer<typeof insertUserSchema>;
 export type LoginUser = z.infer<typeof loginSchema>;
+export type ChangePassword = z.infer<typeof changePasswordSchema>;
+export type ForgotPassword = z.infer<typeof forgotPasswordSchema>;
 
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
