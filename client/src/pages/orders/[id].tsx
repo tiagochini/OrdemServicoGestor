@@ -146,7 +146,7 @@ const OrderDetails = () => {
         title: "Item adicionado",
         description: "O item foi adicionado à ordem de serviço com sucesso.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/work-order-items'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/work-orders', orderId, 'items'] });
       refetchItems();
       setIsAddItemDialogOpen(false);
       resetItemForm();
@@ -170,7 +170,7 @@ const OrderDetails = () => {
         title: "Item removido",
         description: "O item foi removido da ordem de serviço com sucesso.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/work-order-items'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/work-orders', orderId, 'items'] });
       refetchItems();
     },
     onError: () => {
