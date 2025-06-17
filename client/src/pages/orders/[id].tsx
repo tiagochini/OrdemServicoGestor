@@ -348,6 +348,14 @@ const OrderDetails = () => {
     );
   }
 
+  // Debug log
+  console.log('Rendering page with data:', {
+    workOrder,
+    customer,
+    technician,
+    isLoading
+  });
+
   return (
     <div className="py-6">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -474,7 +482,7 @@ const OrderDetails = () => {
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
                       <Label htmlFor="catalog-item">Item do Catálogo</Label>
-                      <Select value={selectedCatalogItem?.id?.toString() || ""} onValueChange={(value) => {
+                      <Select value={selectedCatalogItem?.id?.toString() || undefined} onValueChange={(value) => {
                         const item = catalogItems.find((item: any) => item.id.toString() === value);
                         setSelectedCatalogItem(item);
                       }}>
