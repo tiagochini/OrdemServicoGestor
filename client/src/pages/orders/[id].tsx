@@ -75,6 +75,13 @@ const OrderDetails = () => {
   // Fetch work order items
   const { data: workOrderItems = [], refetch: refetchItems } = useQuery<any[]>({
     queryKey: ['/api/work-orders', orderId, 'items'],
+    queryFn: async () => {
+      const response = await fetch(`/api/work-orders/${orderId}/items`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch work order items');
+      }
+      return response.json();
+    },
   });
   
   // Fetch catalog items for selection
@@ -139,6 +146,7 @@ const OrderDetails = () => {
         title: "Item adicionado",
         description: "O item foi adicionado à ordem de serviço com sucesso.",
       });
+      queryClient.invalidateQueries({ queryKey: ['/api/work-order-items'] });
       refetchItems();
       setIsAddItemDialogOpen(false);
       resetItemForm();
@@ -162,6 +170,7 @@ const OrderDetails = () => {
         title: "Item removido",
         description: "O item foi removido da ordem de serviço com sucesso.",
       });
+      queryClient.invalidateQueries({ queryKey: ['/api/work-order-items'] });
       refetchItems();
     },
     onError: () => {
@@ -236,11 +245,13 @@ const OrderDetails = () => {
   };
 
   // Format currency
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number | string) => {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(numValue)) return 'R$ 0,00';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
-    }).format(value);
+    }).format(numValue);
   };
 
   // Get catalog item by ID
