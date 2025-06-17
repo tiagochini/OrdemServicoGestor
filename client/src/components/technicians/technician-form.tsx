@@ -239,6 +239,7 @@ const TechnicianForm = ({ isOpen, onClose, onSuccess, technicianId }: Technician
                         placeholder="Descreva as especialidades do técnico (ex: Elétrica, Hidráulica, Ar condicionado, etc.)"
                         className="min-h-[80px]"
                         {...field}
+                        value={field.value || ""}
                       />
                     </FormControl>
                     <FormMessage />

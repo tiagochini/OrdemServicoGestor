@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import OrdersList from "@/pages/orders";
 import OrderDetails from "@/pages/orders/[id]";
 import TechniciansList from "@/pages/technicians";
+import TechnicianDetails from "@/pages/technicians/[id]";
 import CustomersList from "@/pages/customers";
 import CustomerDetails from "@/pages/customers/[id]";
 import Settings from "@/pages/settings";
@@ -33,6 +34,7 @@ function Router() {
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/orders" component={OrdersList} />
       <ProtectedRoute path="/orders/:id" component={OrderDetails} />
+      <ProtectedRoute path="/technicians/:id" component={TechnicianDetails} />
       <ProtectedRoute path="/technicians" component={TechniciansList} />
       <ProtectedRoute path="/customers/:id" component={CustomerDetails} />
       <ProtectedRoute path="/customers" component={CustomersList} />
