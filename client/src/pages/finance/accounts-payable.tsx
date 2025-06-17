@@ -240,9 +240,9 @@ const AccountsPayable = () => {
       <Card>
         <CardHeader>
           <CardTitle>Filtros e Busca</CardTitle>
-          <CardDescription>
+          <p className="text-sm text-muted-foreground">
             Encontre contas específicas por descrição, categoria ou documento
-          </CardDescription>
+          </p>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4">
@@ -315,9 +315,9 @@ const AccountsPayable = () => {
       <Card>
         <CardHeader>
           <CardTitle>Lista de Contas a Pagar</CardTitle>
-          <CardDescription>
+          <p className="text-sm text-muted-foreground">
             {filteredPayables.length} conta(s) a pagar encontrada(s)
-          </CardDescription>
+          </p>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -460,22 +460,7 @@ const AccountsPayable = () => {
   );
 };
 
-// Funções auxiliares para formatar status
-function getStatusStyles(status: string): string {
-  switch (status) {
-    case TransactionStatus.PAID:
-      return "bg-green-100 text-green-700";
-    case TransactionStatus.PENDING:
-      return "bg-yellow-100 text-yellow-700";
-    case TransactionStatus.OVERDUE:
-      return "bg-red-100 text-red-700";
-    case TransactionStatus.CANCELLED:
-      return "bg-gray-100 text-gray-700";
-    default:
-      return "bg-gray-100 text-gray-700";
-  }
-}
-
+// Funções auxiliares para formatação
 function getStatusLabel(status: string): string {
   switch (status) {
     case TransactionStatus.PAID:

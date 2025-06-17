@@ -118,7 +118,18 @@ This is a comprehensive Service Management System built with modern web technolo
 - Port configuration for external access (port 80 mapped to 5000)
 
 ## Changelog
-- June 17, 2025. Initial setup
+- June 17, 2025: Initial setup
+- June 17, 2025: **SPRINT 3.2 DO MÓDULO FINANCEIRO CONCLUÍDA**
+  - Implementadas interfaces completas de Contas a Pagar e Contas a Receber
+  - Componente de formulário reutilizável PayableReceivableForm criado
+  - Funcionalidades de CRUD completas para ambas as funcionalidades
+  - Sistema de filtros avançados (status, período, cliente)
+  - Botões de ação rápida (marcar como pago/recebido)
+  - Cartões de resumo estatístico para cada módulo
+  - Indicadores visuais para contas vencidas
+  - Integração completa com APIs do backend
+  - Validação de formulários com React Hook Form + Zod
+  - Interface responsiva e profissional
 
 ## User Preferences
 
