@@ -320,7 +320,11 @@ export class MemStorage implements IStorage {
       }
     ];
     
-    workOrders.forEach(order => this.createWorkOrder(order));
+    workOrders.forEach((order) => {
+      const createdOrder = this.createWorkOrder(order);
+      // Ensure the order has the generated orderNumber
+      console.log(`Created work order ${createdOrder.orderNumber} for customer ${createdOrder.customerId}`);
+    });
     
     // Add sample catalog items - Products
     const catalogProducts = [
@@ -559,7 +563,7 @@ export class MemStorage implements IStorage {
     );
   }
 
-  async createWorkOrder(insertWorkOrder: InsertWorkOrder): Promise<WorkOrder> {
+  createWorkOrder(insertWorkOrder: InsertWorkOrder): WorkOrder {
     const id = this.workOrderId++;
     const orderNumber = `OS-${9819 + id}`; // Generate order number
     const now = new Date();
