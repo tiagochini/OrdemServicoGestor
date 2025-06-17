@@ -206,7 +206,7 @@ export class MemStorage implements IStorage {
     this.initSampleData();
   }
 
-  private async initSampleData() {
+  private async initAdminUser() {
     // Create default admin user
     const { hashPassword } = await import('./auth/password.js');
     const defaultAdminPassword = await hashPassword('admin123');
@@ -222,6 +222,13 @@ export class MemStorage implements IStorage {
     };
     
     await this.createUser(adminUser);
+  }
+
+  private initSampleData() {
+    // Initialize admin user asynchronously
+    this.initAdminUser();
+    
+    // Add sample technicians
     
     // Add sample technicians
     const technicians = [
@@ -491,8 +498,8 @@ export class MemStorage implements IStorage {
     const user: User = {
       ...insertUser,
       id,
-      password: "", // Will be set by auth service
-      mustChangePassword: true,
+      password: insertUser.password || "",
+      mustChangePassword: insertUser.mustChangePassword !== undefined ? insertUser.mustChangePassword : true,
       createdAt: now,
       email: insertUser.email || null,
       relatedId: insertUser.relatedId || null
