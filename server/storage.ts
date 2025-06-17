@@ -214,11 +214,56 @@ export class MemStorage implements IStorage {
     
     // Add sample customers
     const customers = [
-      { name: "Maria Santos", email: "maria@example.com", phone: "+5511912345678", address: "Av. Paulista, 1000" },
-      { name: "João Pereira", email: "joao@example.com", phone: "+5511923456789", address: "Rua Augusta, 500" },
-      { name: "Empresa ABC Ltda.", email: "contato@abc.com", phone: "+5511934567890", address: "Av. Brigadeiro Faria Lima, 2000" },
-      { name: "Ana Costa", email: "ana@example.com", phone: "+5511945678901", address: "Rua Oscar Freire, 300" },
-      { name: "Carlos Mendes", email: "carlos@example.com", phone: "+5511956789012", address: "Alameda Santos, 700" }
+      { 
+        name: "Maria Santos", 
+        email: "maria@example.com", 
+        phone: "+5511912345678", 
+        address: "Av. Paulista, 1000",
+        city: "São Paulo",
+        state: "SP",
+        zipCode: "01310-100",
+        company: "Santos Consultoria"
+      },
+      { 
+        name: "João Pereira", 
+        email: "joao@example.com", 
+        phone: "+5511923456789", 
+        address: "Rua Augusta, 500",
+        city: "São Paulo",
+        state: "SP",
+        zipCode: "01305-000",
+        company: undefined
+      },
+      { 
+        name: "Ana Costa", 
+        email: "contato@abc.com", 
+        phone: "+5511934567890", 
+        address: "Av. Brigadeiro Faria Lima, 2000",
+        city: "São Paulo",
+        state: "SP",
+        zipCode: "01451-000",
+        company: "ABC Ltda."
+      },
+      { 
+        name: "Carlos Mendes", 
+        email: "ana@example.com", 
+        phone: "+5511945678901", 
+        address: "Rua Oscar Freire, 300",
+        city: "São Paulo",
+        state: "SP",
+        zipCode: "01426-000",
+        company: undefined
+      },
+      { 
+        name: "Roberto Silva", 
+        email: "carlos@example.com", 
+        phone: "+5511956789012", 
+        address: "Alameda Santos, 700",
+        city: "São Paulo",
+        state: "SP",
+        zipCode: "01418-000",
+        company: "Silva & Associados"
+      }
     ];
     
     customers.forEach(customer => this.createCustomer(customer));

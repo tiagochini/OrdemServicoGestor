@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -23,14 +23,18 @@ const CustomersPage = () => {
   // Fetch customers data
   const { data: customers = [], isLoading: isLoadingCustomers, error } = useQuery<Customer[]>({
     queryKey: ['/api/customers'],
-    onError: (error: Error) => {
+  });
+
+  // Handle error with toast
+  useEffect(() => {
+    if (error) {
       toast({
         title: "Erro ao carregar clientes",
         description: error.message,
         variant: "destructive"
       });
     }
-  });
+  }, [error, toast]);
 
   // Filter customers based on search query and city filter
   const filteredCustomers = customers.filter(customer => {
