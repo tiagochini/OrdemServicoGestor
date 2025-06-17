@@ -1,0 +1,25 @@
+@replit-ai Com base nas diretrizes detalhadas em `instructions.md` e seguindo a prioridade estabelecida, por favor, inicie a implementação completa da **Gestão de Técnicos**. Esta tarefa consiste em três partes principais que devem ser desenvolvidas em sequência:
+
+1.  **Página de Listagem de Técnicos:**
+    * Crie o arquivo `client/src/pages/technicians/index.tsx`.
+    * Implemente a listagem de técnicos com dados mockados inicialmente (ou buscando de `/api/technicians` se o backend já estiver configurado para isso).
+    * Inclua placeholders para filtros por especialização e exibição de status (disponível, ocupado, ausente).
+    * Garanta que a estrutura base utilize React, TypeScript e TanStack Query (para futura integração com API).
+    * Adicione links clicáveis nos cards/linhas para a página de detalhes do técnico (item 3).
+
+2.  **Formulário de Criação/Edição de Técnicos:**
+    * Crie o componente `client/src/components/technicians/technician-form.tsx`.
+    * Desenvolva o formulário para criação e edição de técnicos, utilizando **React Hook Form** e **Zod** para validação.
+    * Os campos devem incluir dados pessoais e especializações.
+    * Prepare o formulário para integração com as APIs `POST /api/technicians` e `PUT /api/technicians/:id` usando `useMutation`.
+    * Integre este formulário em um modal na página de listagem (`index.tsx`) para permitir a criação de novos técnicos.
+
+3.  **Página de Detalhes (Dashboard) do Técnico:**
+    * Crie o arquivo `client/src/pages/technicians/[id].tsx`.
+    * Exiba as informações completas de um técnico específico (utilizando o `id` da URL).
+    * Inclua um placeholder para a seção de "Ordens Atribuídas" e para um "Calendário Semanal" (conforme a documentação).
+    * Adicione um botão de ação para "Editar Técnico".
+
+Certifique-se de seguir rigorosamente os padrões de desenvolvimento, estrutura de arquivos e convenções de nomenclatura definidos em `instructions.md` para todas as partes desta tarefa.
+
+Quando todas as três partes estiverem concluídas, por favor, sinalize com 'CONCLUÍDO'.
