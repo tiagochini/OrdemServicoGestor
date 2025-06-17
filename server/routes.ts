@@ -795,6 +795,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rota de teste para notificações WebSocket
+  app.post('/api/test-notification', isAuthenticated, async (req, res) => {
+    try {
+      const { type, title, message, data } = req.body;
+      
+      if ((global as any).broadcastNotification) {
+        (global as any).broadcastNotification({
+          type: type || 'test',
+          title: title || 'Notificação de Teste',
+          message: message || 'Esta é uma notificação de teste do sistema WebSocket',
+          data: data || { test: true }
+        });
+        
+        res.json({ success: true, message: 'Notificação enviada com sucesso' });
+      } else {
+        res.status(500).json({ message: 'Sistema de notificações não disponível' });
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'Erro ao enviar notificação de teste' });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Configure WebSocket Server seguindo as diretrizes do blueprint

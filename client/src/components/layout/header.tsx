@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Menu, LogOut, User } from "lucide-react";
+import { Menu, LogOut, User } from "lucide-react";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -10,9 +10,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { NotificationCenter } from "@/components/NotificationCenter";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -21,7 +21,6 @@ interface HeaderProps {
 const Header = ({ onMenuClick }: HeaderProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [, navigate] = useLocation();
-  const { toast } = useToast();
   const { user, logoutMutation } = useAuth();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -30,13 +29,6 @@ const Header = ({ onMenuClick }: HeaderProps) => {
     
     // Navigate to orders page with search query
     navigate(`/orders?search=${encodeURIComponent(searchQuery.trim())}`);
-  };
-  
-  const handleNotificationClick = () => {
-    toast({
-      title: "Notificações",
-      description: "Não há novas notificações.",
-    });
   };
   
   const handleLogout = () => {
@@ -91,13 +83,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
           </div>
           
           <div className="ml-4 flex items-center md:ml-6">
-            <button 
-              className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-              onClick={handleNotificationClick}
-            >
-              <span className="sr-only">Ver notificações</span>
-              <Bell className="h-6 w-6" />
-            </button>
+            <NotificationCenter />
   
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
