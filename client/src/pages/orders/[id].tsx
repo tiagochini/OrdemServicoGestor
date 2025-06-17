@@ -27,8 +27,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ChevronLeft, Edit, Trash, Clock, ArrowRight, CheckCircle, XCircle, Plus, Package, ShoppingCart } from "lucide-react";
+import { ChevronLeft, Edit, Trash, Clock, ArrowRight, CheckCircle, XCircle, Plus, Package, ShoppingCart, Printer } from "lucide-react";
 import { ImageUpload } from "@/components/ui/image-upload";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 const OrderDetails = () => {
   const params = useParams<{ id: string }>();
@@ -43,6 +45,7 @@ const OrderDetails = () => {
   const [itemQuantity, setItemQuantity] = useState("1");
   const [itemDiscount, setItemDiscount] = useState("0");
   const [itemNotes, setItemNotes] = useState("");
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   
   // Fetch work order details
   const { data: workOrder, isLoading } = useQuery<any>({
