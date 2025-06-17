@@ -23,6 +23,9 @@ import {
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
+import { generateToken } from "./auth/jwt";
+import { hashPassword, comparePasswords, generateTemporaryPassword } from "./auth/password";
+import { authenticateToken, requireAdmin, requireManagerOrAdmin, AuthenticatedRequest } from "./middleware/auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configurar autenticação
@@ -36,6 +39,218 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     return res.status(500).json({ message: 'Internal server error' });
   };
+
+  // Authentication routes
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: 'Username and password required' });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      const isValidPassword = await comparePasswords(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      const token = generateToken(user);
+      
+      res.json({
+        token,
+        user: {
+          id: user.id,
+          username: user.username,
+          name: user.name,
+          role: user.role,
+          email: user.email,
+          mustChangePassword: user.mustChangePassword
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Login failed' });
+    }
+  });
+
+  app.post('/api/auth/change-password', authenticateToken, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const userId = req.user?.userId;
+
+      if (!userId || !currentPassword || !newPassword) {
+        return res.status(400).json({ message: 'Current password and new password required' });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      const isValidPassword = await comparePasswords(currentPassword, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: 'Current password is incorrect' });
+      }
+
+      const hashedNewPassword = await hashPassword(newPassword);
+      await storage.updateUserPassword(userId, hashedNewPassword);
+      await storage.setMustChangePassword(userId, false);
+
+      res.json({ message: 'Password changed successfully' });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to change password' });
+    }
+  });
+
+  app.get('/api/auth/me', authenticateToken, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Invalid token' });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      res.json({
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        role: user.role,
+        email: user.email,
+        mustChangePassword: user.mustChangePassword
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to get user info' });
+    }
+  });
+
+  // User management routes (Admin only)
+  app.get('/api/users', authenticateToken, requireAdmin, async (_req, res) => {
+    try {
+      const users = await storage.getUsers();
+      const safeUsers = users.map(user => ({
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        role: user.role,
+        email: user.email,
+        mustChangePassword: user.mustChangePassword,
+        createdAt: user.createdAt,
+        relatedId: user.relatedId
+      }));
+      res.json(safeUsers);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch users' });
+    }
+  });
+
+  app.post('/api/users', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(userData.username);
+      if (existingUser) {
+        return res.status(400).json({ message: 'Username already exists' });
+      }
+
+      // Generate temporary password
+      const tempPassword = generateTemporaryPassword();
+      const hashedPassword = await hashPassword(tempPassword);
+
+      const user = await storage.createUser({
+        ...userData,
+        password: hashedPassword,
+        mustChangePassword: true
+      });
+
+      res.status(201).json({
+        user: {
+          id: user.id,
+          username: user.username,
+          name: user.name,
+          role: user.role,
+          email: user.email,
+          mustChangePassword: user.mustChangePassword,
+          createdAt: user.createdAt,
+          relatedId: user.relatedId
+        },
+        temporaryPassword: tempPassword
+      });
+    } catch (error) {
+      handleZodError(error, res);
+    }
+  });
+
+  app.put('/api/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userData = insertUserSchema.partial().parse(req.body);
+
+      const updatedUser = await storage.updateUser(id, userData);
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      res.json({
+        id: updatedUser.id,
+        username: updatedUser.username,
+        name: updatedUser.name,
+        role: updatedUser.role,
+        email: updatedUser.email,
+        mustChangePassword: updatedUser.mustChangePassword,
+        createdAt: updatedUser.createdAt,
+        relatedId: updatedUser.relatedId
+      });
+    } catch (error) {
+      handleZodError(error, res);
+    }
+  });
+
+  app.post('/api/users/:id/reset-password', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      const tempPassword = generateTemporaryPassword();
+      const hashedPassword = await hashPassword(tempPassword);
+
+      const updatedUser = await storage.updateUserPassword(id, hashedPassword);
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      await storage.setMustChangePassword(id, true);
+
+      res.json({
+        message: 'Password reset successfully',
+        temporaryPassword: tempPassword
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to reset password' });
+    }
+  });
+
+  app.delete('/api/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteUser(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to delete user' });
+    }
+  });
 
   // Customer routes
   app.get('/api/customers', async (_req, res) => {

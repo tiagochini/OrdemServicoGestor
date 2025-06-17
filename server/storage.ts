@@ -206,7 +206,23 @@ export class MemStorage implements IStorage {
     this.initSampleData();
   }
 
-  private initSampleData() {
+  private async initSampleData() {
+    // Create default admin user
+    const { hashPassword } = await import('./auth/password.js');
+    const defaultAdminPassword = await hashPassword('admin123');
+    
+    const adminUser = {
+      username: 'admin',
+      name: 'System Administrator',
+      role: 'admin' as const,
+      email: 'admin@system.local',
+      password: defaultAdminPassword,
+      mustChangePassword: false,
+      relatedId: null
+    };
+    
+    await this.createUser(adminUser);
+    
     // Add sample technicians
     const technicians = [
       { name: "Paulo Andrade", email: "paulo@example.com", phone: "+5511987654321", specialization: "Hardware" },
@@ -475,11 +491,60 @@ export class MemStorage implements IStorage {
     const user: User = {
       ...insertUser,
       id,
-      createdAt: now
+      password: "", // Will be set by auth service
+      mustChangePassword: true,
+      createdAt: now,
+      email: insertUser.email || null,
+      relatedId: insertUser.relatedId || null
     };
     
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUser(id: number, userUpdate: Partial<InsertUser>): Promise<User | undefined> {
+    const existingUser = this.users.get(id);
+    if (!existingUser) return undefined;
+    
+    const updatedUser: User = {
+      ...existingUser,
+      ...userUpdate,
+      email: userUpdate.email !== undefined ? userUpdate.email : existingUser.email,
+      relatedId: userUpdate.relatedId !== undefined ? userUpdate.relatedId : existingUser.relatedId
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    return this.users.delete(id);
+  }
+
+  async updateUserPassword(id: number, hashedPassword: string): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const updatedUser: User = {
+      ...user,
+      password: hashedPassword
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  async setMustChangePassword(id: number, mustChange: boolean): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const updatedUser: User = {
+      ...user,
+      mustChangePassword: mustChange
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
   // Customer methods
