@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useAuth, loginSchema, registerSchema } from "@/hooks/use-auth";
+import { useAuth } from "@/contexts/AuthContext";
+import { loginSchema, registerSchema } from "@/lib/auth-schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";

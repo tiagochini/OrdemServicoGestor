@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import Sidebar from "./sidebar";
 import Header from "./header";
 import MobileNav from "./mobile-nav";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MainLayoutProps {
   children: React.ReactNode;
