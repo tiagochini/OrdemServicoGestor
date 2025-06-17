@@ -10,6 +10,7 @@ import OrdersList from "@/pages/orders";
 import OrderDetails from "@/pages/orders/[id]";
 import TechniciansList from "@/pages/technicians";
 import CustomersList from "@/pages/customers";
+import CustomerDetails from "@/pages/customers/[id]";
 import Settings from "@/pages/settings";
 import AuthPage from "@/pages/auth-page";
 import FinanceOverview from "@/pages/finance";
@@ -33,6 +34,7 @@ function Router() {
       <ProtectedRoute path="/orders" component={OrdersList} />
       <ProtectedRoute path="/orders/:id" component={OrderDetails} />
       <ProtectedRoute path="/technicians" component={TechniciansList} />
+      <ProtectedRoute path="/customers/:id" component={CustomerDetails} />
       <ProtectedRoute path="/customers" component={CustomersList} />
       <ProtectedRoute path="/finance" component={FinanceOverview} />
       <ProtectedRoute path="/finance/transactions" component={Transactions} />
