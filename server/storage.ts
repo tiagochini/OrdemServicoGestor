@@ -58,7 +58,7 @@ export interface IStorage {
   getWorkOrdersByStatus(status: string): Promise<WorkOrder[]>;
   getWorkOrdersByTechnician(technicianId: number): Promise<WorkOrder[]>;
   getWorkOrdersByCustomer(customerId: number): Promise<WorkOrder[]>;
-  createWorkOrder(workOrder: InsertWorkOrder): Promise<WorkOrder>;
+  createWorkOrder(workOrder: InsertWorkOrder): WorkOrder;
   updateWorkOrder(id: number, workOrder: Partial<InsertWorkOrder>): Promise<WorkOrder | undefined>;
   deleteWorkOrder(id: number): Promise<boolean>;
 
@@ -574,6 +574,9 @@ export class MemStorage implements IStorage {
       orderNumber,
       createdAt: now,
       updatedAt: now,
+      technicianId: insertWorkOrder.technicianId ?? null,
+      serviceType: insertWorkOrder.serviceType ?? null,
+      notes: insertWorkOrder.notes ?? null,
     };
     
     this.workOrders.set(id, workOrder);

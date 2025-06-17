@@ -47,6 +47,9 @@ const OrderDetails = () => {
   // Fetch work order details
   const { data: workOrder, isLoading } = useQuery<any>({
     queryKey: ['/api/work-orders', orderId],
+    onSuccess: (data) => {
+      console.log('Work order loaded:', data);
+    },
     onError: () => {
       toast({
         title: "Erro",
@@ -60,13 +63,29 @@ const OrderDetails = () => {
   // Fetch customer
   const { data: customer } = useQuery<any>({
     queryKey: ['/api/customers', workOrder?.customerId],
+    queryFn: async () => {
+      const response = await fetch(`/api/customers/${workOrder.customerId}`);
+      if (!response.ok) throw new Error('Failed to fetch customer');
+      return response.json();
+    },
     enabled: !!workOrder?.customerId,
+    onSuccess: (data) => {
+      console.log('Customer loaded:', data);
+    }
   });
   
   // Fetch technician
   const { data: technician } = useQuery<any>({
     queryKey: ['/api/technicians', workOrder?.technicianId],
+    queryFn: async () => {
+      const response = await fetch(`/api/technicians/${workOrder.technicianId}`);
+      if (!response.ok) throw new Error('Failed to fetch technician');
+      return response.json();
+    },
     enabled: !!workOrder?.technicianId,
+    onSuccess: (data) => {
+      console.log('Technician loaded:', data);
+    }
   });
   
   // Fetch notes
