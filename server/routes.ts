@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { 
   insertCustomerSchema, 
@@ -209,6 +210,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const workOrderData = insertWorkOrderSchema.parse(req.body);
       const workOrder = await storage.createWorkOrder(workOrderData);
+      
+      // Buscar informações do cliente e técnico para a notificação
+      const customer = await storage.getCustomer(workOrder.customerId);
+      const technician = workOrder.technicianId ? await storage.getTechnician(workOrder.technicianId) : null;
+      
+      // Enviar notificação via WebSocket
+      if ((global as any).broadcastNotification) {
+        (global as any).broadcastNotification({
+          type: 'work_order_created',
+          title: 'Nova Ordem de Serviço',
+          message: `Ordem ${workOrder.id} criada para ${customer?.name || 'Cliente desconhecido'}`,
+          data: {
+            workOrderId: workOrder.id,
+            customerName: customer?.name,
+            technicianName: technician?.name,
+            status: workOrder.status,
+            description: workOrder.description
+          }
+        });
+      }
+      
       res.status(201).json(workOrder);
     } catch (error) {
       handleZodError(error, res);
@@ -223,6 +245,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!workOrder) {
         return res.status(404).json({ message: 'Work order not found' });
+      }
+      
+      // Buscar informações do cliente e técnico para a notificação
+      const customer = await storage.getCustomer(workOrder.customerId);
+      const technician = workOrder.technicianId ? await storage.getTechnician(workOrder.technicianId) : null;
+      
+      // Enviar notificação via WebSocket quando o status muda
+      if (workOrderData.status && (global as any).broadcastNotification) {
+        const statusLabels: Record<string, string> = {
+          'pending': 'Pendente',
+          'in-progress': 'Em Andamento',
+          'completed': 'Concluída',
+          'cancelled': 'Cancelada'
+        };
+        
+        (global as any).broadcastNotification({
+          type: 'work_order_updated',
+          title: 'Ordem de Serviço Atualizada',
+          message: `Ordem ${workOrder.id} - Status: ${statusLabels[workOrder.status] || workOrder.status}`,
+          data: {
+            workOrderId: workOrder.id,
+            customerName: customer?.name,
+            technicianName: technician?.name,
+            oldStatus: workOrderData.status,
+            newStatus: workOrder.status,
+            description: workOrder.description
+          }
+        });
       }
       
       res.json(workOrder);
@@ -746,5 +796,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Configure WebSocket Server seguindo as diretrizes do blueprint
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Armazenar conexões WebSocket ativas
+  const connectedClients = new Set<WebSocket>();
+  
+  wss.on('connection', (ws: WebSocket) => {
+    console.log('Nova conexão WebSocket estabelecida');
+    connectedClients.add(ws);
+    
+    // Enviar mensagem de boas-vindas
+    ws.send(JSON.stringify({
+      type: 'connection',
+      message: 'Conectado ao sistema de notificações',
+      timestamp: new Date().toISOString()
+    }));
+    
+    // Lidar com mensagens recebidas do cliente
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        console.log('Mensagem recebida do cliente:', data);
+        
+        // Eco da mensagem para teste
+        if (data.type === 'ping') {
+          ws.send(JSON.stringify({
+            type: 'pong',
+            timestamp: new Date().toISOString()
+          }));
+        }
+      } catch (error) {
+        console.error('Erro ao processar mensagem WebSocket:', error);
+      }
+    });
+    
+    // Remover conexão quando fechada
+    ws.on('close', () => {
+      console.log('Conexão WebSocket fechada');
+      connectedClients.delete(ws);
+    });
+    
+    ws.on('error', (error) => {
+      console.error('Erro na conexão WebSocket:', error);
+      connectedClients.delete(ws);
+    });
+  });
+  
+  // Função utilitária para broadcast de notificações
+  function broadcastNotification(notification: {
+    type: string;
+    title: string;
+    message: string;
+    data?: any;
+    timestamp?: string;
+  }) {
+    const notificationData = {
+      ...notification,
+      timestamp: notification.timestamp || new Date().toISOString()
+    };
+    
+    const message = JSON.stringify(notificationData);
+    
+    connectedClients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    });
+    
+    console.log(`Notificação enviada para ${connectedClients.size} clientes:`, notificationData);
+  }
+  
+  // Tornar a função de broadcast disponível globalmente no servidor
+  (global as any).broadcastNotification = broadcastNotification;
+  
   return httpServer;
 }
