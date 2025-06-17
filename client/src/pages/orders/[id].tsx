@@ -210,6 +210,7 @@ const OrderDetails = () => {
       workOrderId: orderId,
       content: newNote.trim(),
       createdBy: "Usuário atual", // In a real app, this would come from auth context
+      attachments: noteImages.length > 0 ? noteImages : undefined,
     });
   };
 
@@ -633,6 +634,23 @@ const OrderDetails = () => {
                     </CardHeader>
                     <CardContent className="pt-0">
                       <p className="text-sm">{note.content}</p>
+                      {note.attachments && note.attachments.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-xs text-gray-500 mb-2">Anexos:</p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            {note.attachments.map((image, imgIndex) => (
+                              <div key={imgIndex} className="relative group">
+                                <img
+                                  src={image}
+                                  alt={`Anexo ${imgIndex + 1}`}
+                                  className="w-full h-20 object-cover rounded-md border cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => window.open(image, '_blank')}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))
@@ -648,6 +666,17 @@ const OrderDetails = () => {
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
               />
+              
+              <div className="mt-4">
+                <Label>Anexar Imagens (opcional)</Label>
+                <ImageUpload
+                  images={noteImages}
+                  onImagesChange={setNoteImages}
+                  maxImages={3}
+                  className="mt-2"
+                />
+              </div>
+              
               <div className="flex justify-end mt-2">
                 <Button 
                   onClick={handleAddNote}
