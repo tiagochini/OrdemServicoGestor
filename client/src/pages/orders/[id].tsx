@@ -70,6 +70,13 @@ const OrderDetails = () => {
   // Fetch notes
   const { data: notes = [], refetch: refetchNotes } = useQuery<any[]>({
     queryKey: ['/api/work-orders', orderId, 'notes'],
+    queryFn: async () => {
+      const response = await fetch(`/api/work-orders/${orderId}/notes`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch notes');
+      }
+      return response.json();
+    },
   });
   
   // Fetch work order items
@@ -101,6 +108,7 @@ const OrderDetails = () => {
         description: "A nota foi adicionada com sucesso.",
       });
       setNewNote("");
+      queryClient.invalidateQueries({ queryKey: ['/api/work-orders', orderId, 'notes'] });
       refetchNotes();
     },
     onError: () => {
