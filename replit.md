@@ -140,8 +140,14 @@ This is a comprehensive Service Management System built with modern web technolo
   - Relatórios de Performance de Técnicos com métricas de produtividade
   - Relatórios de Lucratividade com análise financeira por período e categoria
   - Sistema de filtros por período (mês, trimestre, ano) e técnico específico
-  - Preparação para futuros relatórios (Performance, Financeiro, Clientes, Produtividade)
   - Rota /reports configurada no sistema de navegação
+  - **GERAÇÃO DE PDF PARA RELATÓRIOS FINANCEIROS IMPLEMENTADA**
+  - Quatro tipos de relatórios PDF funcionais: Performance, Financeiro, Clientes, Produtividade
+  - Botões anteriormente desabilitados agora totalmente funcionais
+  - Estados de carregamento durante geração de PDF ("Gerando PDF...")
+  - Formatação profissional com cores diferenciadas por tipo de relatório
+  - PDFs incluem cabeçalhos, dados filtrados por período, métricas detalhadas
+  - Download automático com nomes únicos baseados na data
 
 ## User Preferences
 
