@@ -9,7 +9,6 @@ import { CatalogItem } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CatalogItemForm from '@/components/catalog/catalog-item-form';
 
 const formatCurrency = (value: string | number) => {
@@ -64,7 +63,7 @@ export default function CatalogPage() {
     const matchesType = typeFilter === 'all' || item.type === typeFilter;
     
     const matchesTags = selectedTags.length === 0 || 
-      (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
+      (item.tags && selectedTags.some(tag => item.tags!.includes(tag)));
     
     return matchesSearch && matchesType && matchesTags;
   });
@@ -363,86 +362,6 @@ function CatalogGrid({ items, viewMode }: { items: CatalogItem[]; viewMode: 'gri
             )}
           </CardContent>
         </Card>
-      ))}
-    </div>
-  );
-}
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[...Array(6)].map((_, i) => (
-          <Card key={i} className="overflow-hidden animate-pulse">
-            <div className="h-48 bg-gray-200 dark:bg-gray-800" />
-            <CardHeader>
-              <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded w-3/4" />
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded" />
-              <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-1/2" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <Tag className="h-12 w-12 mx-auto text-gray-400" />
-        <h3 className="mt-4 text-lg font-medium">Nenhum item encontrado</h3>
-        <p className="text-muted-foreground mt-2">
-          Tente ajustar seus filtros ou adicione um novo item ao catálogo.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {items.map((item) => (
-        <Link key={item.id} to={`/catalog/${item.id}`}>
-          <Card className="overflow-hidden h-full cursor-pointer transition-all hover:shadow-md">
-            <div className="h-48 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 flex items-center justify-center">
-              <div className="text-2xl font-semibold text-center p-4">
-                {item.type === 'product' ? '📦' : '🔧'} {item.name}
-              </div>
-            </div>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex justify-between items-start">
-                <span>{item.name}</span>
-                <Badge variant={item.type === 'product' ? 'default' : 'secondary'}>
-                  {item.type === 'product' ? 'Produto' : 'Serviço'}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pb-2">
-              <p className="text-muted-foreground text-sm line-clamp-2">
-                {item.description || 'Sem descrição'}
-              </p>
-              {item.sku && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  SKU: {item.sku}
-                </p>
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <div className="text-lg font-bold">
-                {formatCurrency(item.price)}
-              </div>
-              <div className="flex flex-wrap gap-1 justify-end">
-                {item.tags?.slice(0, 2).map((tag) => (
-                  <Badge key={tag} variant="outline" className="text-xs">
-                    {tag}
-                  </Badge>
-                ))}
-                {item.tags && item.tags.length > 2 && (
-                  <Badge variant="outline" className="text-xs">+{item.tags.length - 2}</Badge>
-                )}
-              </div>
-            </CardFooter>
-          </Card>
-        </Link>
       ))}
     </div>
   );
