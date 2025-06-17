@@ -47,6 +47,11 @@ const OrderDetails = () => {
   // Fetch work order details
   const { data: workOrder, isLoading } = useQuery<any>({
     queryKey: ['/api/work-orders', orderId],
+    queryFn: async () => {
+      const response = await fetch(`/api/work-orders/${orderId}`);
+      if (!response.ok) throw new Error('Failed to fetch work order');
+      return response.json();
+    },
     onSuccess: (data) => {
       console.log('Work order loaded:', data);
     },
