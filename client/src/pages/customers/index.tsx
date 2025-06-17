@@ -51,7 +51,7 @@ const CustomersPage = () => {
   });
 
   // Get unique cities for filter dropdown
-  const uniqueCities = Array.from(new Set(customers.map(customer => customer.city).filter(Boolean))) as string[];
+  const uniqueCities = Array.from(new Set(customers.map(customer => customer.city).filter(city => city && city.trim() !== ""))) as string[];
 
   // Calculate pagination
   const indexOfLastCustomer = currentPage * customersPerPage;
@@ -66,7 +66,7 @@ const CustomersPage = () => {
   };
 
   const handleCityFilterChange = (value: string) => {
-    setCityFilter(value);
+    setCityFilter(value === "ALL_CITIES" ? "" : value);
     setCurrentPage(1);
   };
 
@@ -127,9 +127,9 @@ const CustomersPage = () => {
                     <SelectValue placeholder="Filtrar por cidade" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas as cidades</SelectItem>
+                    <SelectItem value="ALL_CITIES">Todas as cidades</SelectItem>
                     {uniqueCities.map((city) => (
-                      <SelectItem key={city} value={city || ""}>
+                      <SelectItem key={city} value={city}>
                         {city}
                       </SelectItem>
                     ))}
