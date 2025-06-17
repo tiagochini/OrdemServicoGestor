@@ -130,6 +130,7 @@ export const notes = pgTable("notes", {
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   createdBy: text("created_by"),
+  attachments: text("attachments").array(), // Store image URLs/paths
 });
 
 // Financial transactions table (for both income and expenses)

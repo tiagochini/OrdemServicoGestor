@@ -609,6 +609,7 @@ export class MemStorage implements IStorage {
       ...insertNote,
       id,
       createdAt: now,
+      attachments: insertNote.attachments || null,
     };
     
     this.notes.set(id, note);

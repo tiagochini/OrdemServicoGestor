@@ -28,6 +28,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ChevronLeft, Edit, Trash, Clock, ArrowRight, CheckCircle, XCircle, Plus, Package, ShoppingCart } from "lucide-react";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 const OrderDetails = () => {
   const params = useParams<{ id: string }>();
@@ -35,6 +36,7 @@ const OrderDetails = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [newNote, setNewNote] = useState("");
+  const [noteImages, setNoteImages] = useState<string[]>([]);
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
   const [selectedCatalogItem, setSelectedCatalogItem] = useState<any>(null);
@@ -98,7 +100,7 @@ const OrderDetails = () => {
   
   // Create note mutation
   const createNoteMutation = useMutation({
-    mutationFn: async (note: { workOrderId: number, content: string, createdBy: string }) => {
+    mutationFn: async (note: { workOrderId: number, content: string, createdBy: string, attachments?: string[] }) => {
       const response = await apiRequest('POST', '/api/notes', note);
       return response.json();
     },
@@ -108,6 +110,7 @@ const OrderDetails = () => {
         description: "A nota foi adicionada com sucesso.",
       });
       setNewNote("");
+      setNoteImages([]);
       queryClient.invalidateQueries({ queryKey: ['/api/work-orders', orderId, 'notes'] });
       refetchNotes();
     },
