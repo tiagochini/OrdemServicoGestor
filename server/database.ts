@@ -13,12 +13,13 @@ let db: any;
 export function initializeDatabase() {
   if (DB_TYPE === "mysql") {
     // MySQL configuration
-    const connection = mysql.createConnection({
+    const connection = mysql.createPool({
       host: process.env.DB_HOST || "localhost",
       port: parseInt(process.env.DB_PORT || "3306"),
       user: process.env.DB_USER || "root",
       password: process.env.DB_PASSWORD || "",
       database: process.env.DB_NAME || "service_management",
+      connectionLimit: 10,
     });
     
     db = drizzleMysql(connection, { schema, mode: "default" });

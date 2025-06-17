@@ -36,7 +36,11 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
   getUsers(): Promise<User[]>;
+  updateUserPassword(id: number, hashedPassword: string): Promise<User | undefined>;
+  setMustChangePassword(id: number, mustChange: boolean): Promise<User | undefined>;
 
   // Customer methods
   getCustomers(): Promise<Customer[]>;
