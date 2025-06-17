@@ -228,6 +228,210 @@ const OrderDetails = () => {
       return "Data inválida";
     }
   };
+
+  // Generate PDF function
+  const generatePDF = async () => {
+    if (!workOrder || !customer) {
+      toast({
+        title: "Erro",
+        description: "Dados da ordem de serviço não carregados.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingPDF(true);
+
+    try {
+      // Create a printable version of the order
+      const printElement = document.createElement('div');
+      printElement.style.width = '210mm';
+      printElement.style.backgroundColor = 'white';
+      printElement.style.padding = '20mm';
+      printElement.style.fontFamily = 'Arial, sans-serif';
+      printElement.style.fontSize = '12px';
+      printElement.style.lineHeight = '1.4';
+      printElement.style.color = 'black';
+
+      // Calculate totals
+      const subtotal = calculateSubtotal();
+      const total = subtotal;
+
+      printElement.innerHTML = `
+        <div style="margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h1 style="margin: 0; font-size: 24px; font-weight: bold;">ORDEM DE SERVIÇO</h1>
+              <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">Sistema de Gestão de Serviços</p>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 20px; font-weight: bold; color: #000;">#${workOrder.orderNumber}</div>
+              <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                Status: <span style="font-weight: bold; ${getStatusColor(workOrder.status)}">${getStatusDisplay(workOrder.status)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+          <div>
+            <h3 style="margin: 0 0 15px 0; font-size: 16px; font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 5px;">DADOS DO CLIENTE</h3>
+            <div style="margin-bottom: 8px;"><strong>Nome:</strong> ${customer.name}</div>
+            <div style="margin-bottom: 8px;"><strong>Email:</strong> ${customer.email || 'Não informado'}</div>
+            <div style="margin-bottom: 8px;"><strong>Telefone:</strong> ${customer.phone || 'Não informado'}</div>
+            <div style="margin-bottom: 8px;"><strong>Endereço:</strong> ${customer.address || 'Não informado'}</div>
+            ${customer.city ? `<div style="margin-bottom: 8px;"><strong>Cidade:</strong> ${customer.city}${customer.state ? ` - ${customer.state}` : ''}</div>` : ''}
+            ${customer.company ? `<div style="margin-bottom: 8px;"><strong>Empresa:</strong> ${customer.company}</div>` : ''}
+          </div>
+          
+          <div>
+            <h3 style="margin: 0 0 15px 0; font-size: 16px; font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 5px;">DADOS DA ORDEM</h3>
+            <div style="margin-bottom: 8px;"><strong>Data de Criação:</strong> ${formatDate(workOrder.createdAt)}</div>
+            <div style="margin-bottom: 8px;"><strong>Técnico:</strong> ${technician?.name || 'Não atribuído'}</div>
+            <div style="margin-bottom: 8px;"><strong>Tipo de Serviço:</strong> ${workOrder.serviceType || 'Não especificado'}</div>
+            <div style="margin-bottom: 8px;"><strong>Prioridade:</strong> ${workOrder.priority || 'Normal'}</div>
+            ${workOrder.updatedAt && workOrder.status === 'completed' ? `<div style="margin-bottom: 8px;"><strong>Data de Conclusão:</strong> ${formatDate(workOrder.updatedAt)}</div>` : ''}
+          </div>
+        </div>
+
+        <div style="margin-bottom: 30px;">
+          <h3 style="margin: 0 0 15px 0; font-size: 16px; font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 5px;">DESCRIÇÃO DO SERVIÇO</h3>
+          <div style="padding: 15px; background-color: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 4px;">
+            ${workOrder.description}
+          </div>
+        </div>
+
+        ${workOrderItems.length > 0 ? `
+        <div style="margin-bottom: 30px;">
+          <h3 style="margin: 0 0 15px 0; font-size: 16px; font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 5px;">ITENS UTILIZADOS</h3>
+          <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+            <thead>
+              <tr style="background-color: #f5f5f5;">
+                <th style="border: 1px solid #ddd; padding: 10px; text-align: left; font-weight: bold;">Item</th>
+                <th style="border: 1px solid #ddd; padding: 10px; text-align: center; font-weight: bold;">Qtd</th>
+                <th style="border: 1px solid #ddd; padding: 10px; text-align: right; font-weight: bold;">Valor Unit.</th>
+                <th style="border: 1px solid #ddd; padding: 10px; text-align: right; font-weight: bold;">Desconto</th>
+                <th style="border: 1px solid #ddd; padding: 10px; text-align: right; font-weight: bold;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${workOrderItems.map((item: any) => {
+                const catalogItem = getCatalogItemById(item.catalogItemId);
+                const itemTotal = (item.quantity * item.unitPrice) - (item.discount || 0);
+                return `
+                  <tr>
+                    <td style="border: 1px solid #ddd; padding: 10px;">${catalogItem?.name || 'Item não encontrado'}</td>
+                    <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">${item.quantity}</td>
+                    <td style="border: 1px solid #ddd; padding: 10px; text-align: right;">${formatCurrency(item.unitPrice)}</td>
+                    <td style="border: 1px solid #ddd; padding: 10px; text-align: right;">${item.discount ? formatCurrency(item.discount) : '-'}</td>
+                    <td style="border: 1px solid #ddd; padding: 10px; text-align: right; font-weight: bold;">${formatCurrency(itemTotal)}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+            <tfoot>
+              <tr style="background-color: #f5f5f5;">
+                <td colspan="4" style="border: 1px solid #ddd; padding: 10px; text-align: right; font-weight: bold;">TOTAL GERAL:</td>
+                <td style="border: 1px solid #ddd; padding: 10px; text-align: right; font-weight: bold; font-size: 14px;">${formatCurrency(total)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        ` : ''}
+
+        ${notes.length > 0 ? `
+        <div style="margin-bottom: 30px;">
+          <h3 style="margin: 0 0 15px 0; font-size: 16px; font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 5px;">ANOTAÇÕES E OBSERVAÇÕES</h3>
+          ${notes.map((note: any) => `
+            <div style="margin-bottom: 15px; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #007bff; border-radius: 4px;">
+              <div style="font-size: 11px; color: #666; margin-bottom: 8px;">
+                ${formatDate(note.createdAt)}${note.createdBy ? ` - ${note.createdBy}` : ''}
+              </div>
+              <div>${note.content}</div>
+            </div>
+          `).join('')}
+        </div>
+        ` : ''}
+
+        <div style="margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px;">
+          <div style="text-align: center;">
+            <div style="border-top: 1px solid #000; padding-top: 10px; margin-top: 50px;">
+              <strong>Assinatura do Cliente</strong>
+            </div>
+          </div>
+          <div style="text-align: center;">
+            <div style="border-top: 1px solid #000; padding-top: 10px; margin-top: 50px;">
+              <strong>Assinatura do Técnico</strong>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #666;">
+          Documento gerado em ${formatDate(new Date().toISOString())}
+        </div>
+      `;
+
+      // Add to DOM temporarily for rendering
+      document.body.appendChild(printElement);
+
+      // Generate PDF using html2canvas and jsPDF
+      const canvas = await html2canvas(printElement, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: printElement.offsetWidth,
+        height: printElement.offsetHeight
+      });
+
+      // Remove temporary element
+      document.body.removeChild(printElement);
+
+      // Create PDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgData = canvas.toDataURL('image/png');
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      // Add image to PDF
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+
+      // Save PDF
+      pdf.save(`OS-${workOrder.orderNumber}.pdf`);
+
+      toast({
+        title: "PDF Gerado",
+        description: "A ordem de serviço foi exportada para PDF com sucesso.",
+        variant: "default",
+      });
+
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível gerar o PDF. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
+  // Get status color for PDF
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case OrderStatus.PENDING:
+        return "color: #f59e0b;";
+      case OrderStatus.IN_PROGRESS:
+        return "color: #3b82f6;";
+      case OrderStatus.COMPLETED:
+        return "color: #10b981;";
+      case OrderStatus.CANCELLED:
+        return "color: #ef4444;";
+      default:
+        return "color: #6b7280;";
+    }
+  };
   
   // Add note
   const handleAddNote = () => {
@@ -389,6 +593,15 @@ const OrderDetails = () => {
                 </p>
               </div>
               <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={generatePDF}
+                  disabled={isGeneratingPDF}
+                >
+                  <Printer className="h-4 w-4 mr-1" />
+                  {isGeneratingPDF ? "Gerando..." : "Imprimir PDF"}
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => setIsEditFormOpen(true)}>
                   <Edit className="h-4 w-4 mr-1" />
                   Editar

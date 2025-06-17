@@ -130,6 +130,18 @@ This is a comprehensive Service Management System built with modern web technolo
   - Integração completa com APIs do backend
   - Validação de formulários com React Hook Form + Zod
   - Interface responsiva e profissional
+- June 17, 2025: **SPRINT 4.2 - RELATÓRIOS DETALHADOS E GERAÇÃO DE PDF CONCLUÍDA**
+  - Implementado sistema completo de geração de PDF para Ordens de Serviço
+  - Bibliotecas jsPDF e html2canvas instaladas e configuradas
+  - Botão "Imprimir PDF" adicionado na página de detalhes da ordem de serviço
+  - PDF gerado inclui: dados completos do cliente, técnico, itens utilizados, anotações
+  - Formatação profissional com cabeçalho, tabelas e seções de assinatura
+  - Página de Relatórios Detalhados (/reports) criada com análises de performance
+  - Relatórios de Performance de Técnicos com métricas de produtividade
+  - Relatórios de Lucratividade com análise financeira por período e categoria
+  - Sistema de filtros por período (mês, trimestre, ano) e técnico específico
+  - Preparação para futuros relatórios (Performance, Financeiro, Clientes, Produtividade)
+  - Rota /reports configurada no sistema de navegação
 
 ## User Preferences
 
