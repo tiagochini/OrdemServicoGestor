@@ -353,13 +353,7 @@ const OrderDetails = () => {
     );
   }
 
-  // Debug log
-  console.log('Rendering page with data:', {
-    workOrder,
-    customer,
-    technician,
-    isLoading
-  });
+
 
   return (
     <div className="py-6">
@@ -495,7 +489,9 @@ const OrderDetails = () => {
                           <SelectValue placeholder="Selecione um item..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {catalogItems.map((item: any) => (
+                          {catalogItems
+                            .filter((item: any) => item.id && item.id.toString().trim() !== "")
+                            .map((item: any) => (
                             <SelectItem key={item.id} value={item.id.toString()}>
                               <div className="flex flex-col">
                                 <span>{item.name}</span>
