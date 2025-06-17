@@ -292,6 +292,17 @@ const CustomersPage = () => {
           </>
         )}
       </div>
+
+      {/* Customer Form Modal */}
+      <CustomerForm
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => {
+          setIsCreateModalOpen(false);
+          // Refetch customers data
+          window.location.reload();
+        }}
+      />
     </div>
   );
 };
