@@ -32,6 +32,7 @@ function Router() {
   return (
     <Switch>
       <ProtectedRoute path="/" component={Dashboard} />
+      <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/orders" component={OrdersList} />
       <ProtectedRoute path="/orders/:id" component={OrderDetails} />
       <ProtectedRoute path="/technicians/:id" component={TechnicianDetails} />
