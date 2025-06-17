@@ -18,6 +18,12 @@ const TechniciansPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
 
+  // Mock status for demo purposes
+  const getMockStatus = (id: number) => {
+    const statuses = ['disponivel', 'ocupado', 'ausente'];
+    return statuses[id % 3];
+  };
+
   // Fetch technicians data
   const { data: technicians = [], isLoading, error } = useQuery<Technician[]>({
     queryKey: ['/api/technicians'],
@@ -45,12 +51,6 @@ const TechniciansPage = () => {
       .filter(Boolean)
       .map(spec => spec?.toLowerCase())
   ));
-
-  // Mock status for demo purposes
-  const getMockStatus = (id: number) => {
-    const statuses = ['disponivel', 'ocupado', 'ausente'];
-    return statuses[id % 3];
-  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
