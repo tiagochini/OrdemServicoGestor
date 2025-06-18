@@ -1032,6 +1032,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reports routes
+  app.get('/api/reports/cash-flow', authenticateToken, async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: 'Start date and end date are required' });
+      }
+      
+      const start = new Date(startDate as string);
+      const end = new Date(endDate as string);
+      
+      const cashFlow = await storage.getCashFlow(start, end);
+      res.json(cashFlow);
+    } catch (error) {
+      console.error('Error getting cash flow:', error);
+      res.status(500).json({ message: 'Failed to get cash flow data' });
+    }
+  });
+
+  app.get('/api/reports/profit-loss', authenticateToken, async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: 'Start date and end date are required' });
+      }
+      
+      const start = new Date(startDate as string);
+      const end = new Date(endDate as string);
+      
+      const profitLoss = await storage.getProfitAndLoss(start, end);
+      res.json(profitLoss);
+    } catch (error) {
+      console.error('Error getting profit and loss:', error);
+      res.status(500).json({ message: 'Failed to get profit and loss data' });
+    }
+  });
+
+  app.get('/api/reports/budget-vs-actual', authenticateToken, async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: 'Start date and end date are required' });
+      }
+      
+      const start = new Date(startDate as string);
+      const end = new Date(endDate as string);
+      
+      const budgetVsActual = await storage.getBudgetVsActual(start, end);
+      res.json(budgetVsActual);
+    } catch (error) {
+      console.error('Error getting budget vs actual:', error);
+      res.status(500).json({ message: 'Failed to get budget vs actual data' });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Configure WebSocket Server seguindo as diretrizes do blueprint

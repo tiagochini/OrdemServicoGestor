@@ -71,7 +71,12 @@ const Reports = () => {
     queryKey: ["/api/reports/cash-flow", period, dateRange],
     queryFn: async () => {
       const { startDate, endDate } = getReportDates();
-      const response = await fetch(`/api/reports/cash-flow?startDate=${startDate}&endDate=${endDate}`);
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/reports/cash-flow?startDate=${startDate}&endDate=${endDate}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (!response.ok) {
         throw new Error("Falha ao carregar dados de fluxo de caixa");
       }
