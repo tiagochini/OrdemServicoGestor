@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Lock, User } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useLocation } from 'wouter';
+import { useAuth } from '@/contexts/AuthContext';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -34,6 +35,14 @@ interface LoginResponse {
 export default function Login() {
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string>('');
+  const { login, isAuthenticated } = useAuth();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation('/dashboard');
+    }
+  }, [isAuthenticated, setLocation]);
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -61,8 +70,8 @@ export default function Login() {
       return response.json() as Promise<LoginResponse>;
     },
     onSuccess: (data) => {
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // Use AuthContext login method
+      login(data.token, data.user);
       
       if (data.user.mustChangePassword) {
         setLocation('/change-password');

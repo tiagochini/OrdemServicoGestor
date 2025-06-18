@@ -33,7 +33,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   
   const handleLogout = () => {
     logout();
-    navigate('/auth');
+    navigate('/login');
   };
   
   // Get user initials for avatar
