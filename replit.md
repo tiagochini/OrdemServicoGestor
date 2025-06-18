@@ -176,6 +176,10 @@ This is a comprehensive Service Management System built with modern web technolo
   - **Route Protection**: Complete protection of work-orders, customers, technicians, transactions, accounts, budgets, catalog, and work-order-items APIs
   - **Role-Based Access Control**: Admin-only operations enforced on delete endpoints and user management
   - **Authentication Context**: Frontend authentication state management working seamlessly with JWT backend
+  - **Change Password Flow Fixed**: Password change page now displays outside main layout like login page
+  - **Missing API Endpoints**: Added `/api/reports/cash-flow`, `/api/reports/profit-loss`, and `/api/reports/budget-vs-actual` with JWT authentication
+  - **Authentication Headers**: Updated finance reports page to include proper authorization headers for all API requests
+  - **Redirect Logic**: After password change, users are properly redirected to dashboard with updated authentication state
 
 ## User Preferences
 

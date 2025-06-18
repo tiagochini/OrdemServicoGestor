@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Lock } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useLocation } from 'wouter';
+import { useAuth } from '@/contexts/AuthContext';
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
@@ -27,6 +28,7 @@ export default function ChangePassword() {
   const [, setLocation] = useLocation();
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
+  const { updateUser, user } = useAuth();
 
   const form = useForm<ChangePasswordForm>({
     resolver: zodResolver(changePasswordSchema),
@@ -57,13 +59,14 @@ export default function ChangePassword() {
       return response.json();
     },
     onSuccess: () => {
-      setSuccess('Password changed successfully');
+      setSuccess('Senha alterada com sucesso! Redirecionando...');
       setError('');
       
       // Update user info to reflect password change
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      user.mustChangePassword = false;
-      localStorage.setItem('user', JSON.stringify(user));
+      if (user) {
+        const updatedUser = { ...user, mustChangePassword: false };
+        updateUser(updatedUser);
+      }
       
       setTimeout(() => {
         setLocation('/dashboard');

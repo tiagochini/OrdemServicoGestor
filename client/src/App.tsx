@@ -31,7 +31,7 @@ import UsersPage from "@/pages/admin/users";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
 function ProtectedRoute({ path, component: Component }: { path: string; component: React.ComponentType }) {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -39,10 +39,6 @@ function ProtectedRoute({ path, component: Component }: { path: string; componen
   
   if (!isAuthenticated) {
     return <Route path={path}><Login /></Route>;
-  }
-  
-  if (user?.mustChangePassword) {
-    return <Route path={path}><ChangePassword /></Route>;
   }
   
   return <Route path={path} component={Component} />;
@@ -87,10 +83,20 @@ function Router() {
 }
 
 function AppContent() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+  
+  // Handle change password outside main layout
+  if (isAuthenticated && user?.mustChangePassword) {
+    return (
+      <TooltipProvider>
+        <Toaster />
+        <Router />
+      </TooltipProvider>
+    );
   }
   
   if (!isAuthenticated) {
