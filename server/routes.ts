@@ -823,7 +823,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Catalog routes
-  app.get('/api/catalog', async (req, res) => {
+  app.get('/api/catalog', authenticateToken, async (req, res) => {
     try {
       const { type, tags } = req.query;
       
@@ -844,7 +844,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/catalog/:id', async (req, res) => {
+  app.get('/api/catalog/:id', authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const item = await storage.getCatalogItem(id);
@@ -859,7 +859,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/catalog', isAuthenticated, async (req, res) => {
+  app.post('/api/catalog', authenticateToken, async (req, res) => {
     try {
       const itemData = insertCatalogItemSchema.parse(req.body);
       const item = await storage.createCatalogItem(itemData);
@@ -869,7 +869,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/catalog/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/catalog/:id', authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const itemData = insertCatalogItemSchema.partial().parse(req.body);
@@ -885,7 +885,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/catalog/:id', isAdmin, async (req, res) => {
+  app.delete('/api/catalog/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteCatalogItem(id);
@@ -911,7 +911,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/work-order-items', isAuthenticated, async (req, res) => {
+  app.post('/api/work-order-items', authenticateToken, async (req, res) => {
     try {
       const itemData = insertWorkOrderItemSchema.parse(req.body);
       const item = await storage.createWorkOrderItem(itemData);
@@ -921,7 +921,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/work-order-items/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/work-order-items/:id', authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const itemData = insertWorkOrderItemSchema.partial().parse(req.body);
