@@ -51,7 +51,12 @@ const OrderDetails = () => {
   const { data: workOrder, isLoading } = useQuery<any>({
     queryKey: ['/api/work-orders', orderId],
     queryFn: async () => {
-      const response = await fetch(`/api/work-orders/${orderId}`);
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/work-orders/${orderId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (!response.ok) throw new Error('Failed to fetch work order');
       return response.json();
     },
@@ -72,7 +77,12 @@ const OrderDetails = () => {
   const { data: customer } = useQuery<any>({
     queryKey: ['/api/customers', workOrder?.customerId],
     queryFn: async () => {
-      const response = await fetch(`/api/customers/${workOrder.customerId}`);
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/customers/${workOrder.customerId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (!response.ok) throw new Error('Failed to fetch customer');
       return response.json();
     },
@@ -86,7 +96,12 @@ const OrderDetails = () => {
   const { data: technician } = useQuery<any>({
     queryKey: ['/api/technicians', workOrder?.technicianId],
     queryFn: async () => {
-      const response = await fetch(`/api/technicians/${workOrder.technicianId}`);
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/technicians/${workOrder.technicianId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (!response.ok) throw new Error('Failed to fetch technician');
       return response.json();
     },
