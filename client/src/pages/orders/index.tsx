@@ -24,6 +24,25 @@ const OrdersList = () => {
   // Fetch work orders
   const { data: allWorkOrders = [], isLoading: isLoadingOrders } = useQuery<any[]>({
     queryKey: ['/api/work-orders', { status: statusFilter, technicianId: technicianFilter }],
+    queryFn: async () => {
+      const token = localStorage.getItem('authToken');
+      const params = new URLSearchParams();
+      
+      if (statusFilter) params.append('status', statusFilter);
+      if (technicianFilter) params.append('technicianId', technicianFilter.toString());
+      
+      const queryString = params.toString();
+      const url = `/api/work-orders${queryString ? `?${queryString}` : ''}`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch work orders');
+      return response.json();
+    },
   });
   
   // Filter orders by search query
