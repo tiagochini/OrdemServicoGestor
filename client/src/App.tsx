@@ -27,6 +27,7 @@ import Catalog from "@/pages/catalog";
 import CatalogItemDetails from "@/pages/catalog/[id]";
 import NewCatalogItem from "@/pages/catalog/new";
 import EditCatalogItem from "@/pages/catalog/edit/[id]";
+import UsersPage from "@/pages/admin/users";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
 function ProtectedRoute({ path, component: Component }: { path: string; component: React.ComponentType }) {
@@ -78,6 +79,7 @@ function Router() {
       <ProtectedRoute path="/catalog/new" component={NewCatalogItem} />
       <ProtectedRoute path="/catalog/edit/:id" component={EditCatalogItem} />
       <ProtectedRoute path="/catalog/:id" component={CatalogItemDetails} />
+      <ProtectedRoute path="/admin/users" component={UsersPage} />
       <ProtectedRoute path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
