@@ -573,7 +573,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/transactions/accounts-payable', isAuthenticated, async (_req, res) => {
+  app.get('/api/transactions/accounts-payable', authenticateToken, async (_req, res) => {
     try {
       const transactions = await storage.getAccountsPayable();
       res.json(transactions);
@@ -582,7 +582,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/transactions/accounts-receivable', isAuthenticated, async (_req, res) => {
+  app.get('/api/transactions/accounts-receivable', authenticateToken, async (_req, res) => {
     try {
       const transactions = await storage.getAccountsReceivable();
       res.json(transactions);
@@ -591,7 +591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/transactions/:id', isAuthenticated, async (req, res) => {
+  app.get('/api/transactions/:id', authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const transaction = await storage.getTransaction(id);
@@ -606,7 +606,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/transactions', isAuthenticated, async (req, res) => {
+  app.post('/api/transactions', authenticateToken, async (req, res) => {
     try {
       const transactionData = insertTransactionSchema.parse(req.body);
       const transaction = await storage.createTransaction(transactionData);
@@ -616,7 +616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/transactions/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/transactions/:id', authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const transactionData = insertTransactionSchema.partial().parse(req.body);
@@ -632,7 +632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/transactions/:id', isAdmin, async (req, res) => {
+  app.delete('/api/transactions/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteTransaction(id);
@@ -648,7 +648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Financial Account routes
-  app.get('/api/accounts', isAuthenticated, async (_req, res) => {
+  app.get('/api/accounts', authenticateToken, async (_req, res) => {
     try {
       const accounts = await storage.getAccounts();
       res.json(accounts);
@@ -657,7 +657,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/accounts/balances', isAuthenticated, async (_req, res) => {
+  app.get('/api/accounts/balances', authenticateToken, async (_req, res) => {
     try {
       const balances = await storage.getAccountBalances();
       res.json(balances);
