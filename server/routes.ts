@@ -666,7 +666,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/accounts/:id', isAuthenticated, async (req, res) => {
+  app.get('/api/accounts/:id', authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const account = await storage.getAccount(id);
@@ -681,7 +681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/accounts', isAuthenticated, async (req, res) => {
+  app.post('/api/accounts', authenticateToken, async (req, res) => {
     try {
       const accountData = insertAccountSchema.parse(req.body);
       const account = await storage.createAccount(accountData);
@@ -691,7 +691,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/accounts/:id', isAdmin, async (req, res) => {
+  app.put('/api/accounts/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const accountData = insertAccountSchema.partial().parse(req.body);
@@ -707,7 +707,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/accounts/:id/balance', isAdmin, async (req, res) => {
+  app.put('/api/accounts/:id/balance', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { amount } = req.body;
@@ -728,7 +728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/accounts/:id', isAdmin, async (req, res) => {
+  app.delete('/api/accounts/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteAccount(id);
@@ -744,7 +744,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Budget routes
-  app.get('/api/budgets', isAuthenticated, async (req, res) => {
+  app.get('/api/budgets', authenticateToken, async (req, res) => {
     try {
       const { category, startDate, endDate } = req.query;
       
@@ -766,7 +766,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/budgets/:id', isAuthenticated, async (req, res) => {
+  app.get('/api/budgets/:id', authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const budget = await storage.getBudget(id);
@@ -781,7 +781,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/budgets', isAuthenticated, async (req, res) => {
+  app.post('/api/budgets', authenticateToken, async (req, res) => {
     try {
       const budgetData = insertBudgetSchema.parse(req.body);
       const budget = await storage.createBudget(budgetData);
@@ -791,7 +791,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/budgets/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/budgets/:id', authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const budgetData = insertBudgetSchema.partial().parse(req.body);
@@ -807,7 +807,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/budgets/:id', isAdmin, async (req, res) => {
+  app.delete('/api/budgets/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteBudget(id);
