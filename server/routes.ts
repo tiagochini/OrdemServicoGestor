@@ -277,7 +277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/customers', isAuthenticated, async (req, res) => {
+  app.post('/api/customers', authenticateToken, async (req, res) => {
     try {
       const customerData = insertCustomerSchema.parse(req.body);
       const customer = await storage.createCustomer(customerData);
@@ -287,7 +287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/customers/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/customers/:id', authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const customerData = insertCustomerSchema.partial().parse(req.body);
@@ -303,7 +303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/customers/:id', isAuthenticated, async (req, res) => {
+  app.delete('/api/customers/:id', authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteCustomer(id);
@@ -343,7 +343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/technicians', isAdmin, async (req, res) => {
+  app.post('/api/technicians', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const technicianData = insertTechnicianSchema.parse(req.body);
       const technician = await storage.createTechnician(technicianData);
@@ -353,7 +353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/technicians/:id', isAdmin, async (req, res) => {
+  app.put('/api/technicians/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const technicianData = insertTechnicianSchema.partial().parse(req.body);
@@ -369,7 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/technicians/:id', isAdmin, async (req, res) => {
+  app.delete('/api/technicians/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteTechnician(id);
@@ -543,7 +543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Financial Transaction routes
-  app.get('/api/transactions', isAuthenticated, async (req, res) => {
+  app.get('/api/transactions', authenticateToken, async (req, res) => {
     try {
       const { type, status, category, customerId, workOrderId, startDate, endDate } = req.query;
       
