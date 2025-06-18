@@ -901,7 +901,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Work Order Items routes
-  app.get('/api/work-orders/:id/items', async (req, res) => {
+  app.get('/api/work-orders/:id/items', authenticateToken, async (req, res) => {
     try {
       const workOrderId = parseInt(req.params.id);
       const items = await storage.getWorkOrderItems(workOrderId);
@@ -937,7 +937,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/work-order-items/:id', isAuthenticated, async (req, res) => {
+  app.delete('/api/work-order-items/:id', authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteWorkOrderItem(id);
