@@ -385,7 +385,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Work Order routes
-  app.get('/api/work-orders', async (req, res) => {
+  app.get('/api/work-orders', authenticateToken, async (req, res) => {
     try {
       const { status, technicianId, customerId } = req.query;
       
@@ -406,7 +406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/work-orders/:id', async (req, res) => {
+  app.get('/api/work-orders/:id', authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const workOrder = await storage.getWorkOrder(id);
@@ -421,7 +421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/work-orders', isAuthenticated, async (req, res) => {
+  app.post('/api/work-orders', authenticateToken, async (req, res) => {
     try {
       const workOrderData = insertWorkOrderSchema.parse(req.body);
       const workOrder = await storage.createWorkOrder(workOrderData);
@@ -452,7 +452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/work-orders/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/work-orders/:id', authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const workOrderData = insertWorkOrderSchema.partial().parse(req.body);
@@ -496,7 +496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/work-orders/:id', isAdmin, async (req, res) => {
+  app.delete('/api/work-orders/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteWorkOrder(id);
@@ -512,7 +512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Note routes
-  app.get('/api/work-orders/:id/notes', async (req, res) => {
+  app.get('/api/work-orders/:id/notes', authenticateToken, async (req, res) => {
     try {
       const workOrderId = parseInt(req.params.id);
       const notes = await storage.getNotesByWorkOrder(workOrderId);
@@ -522,7 +522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/notes', isAuthenticated, async (req, res) => {
+  app.post('/api/notes', authenticateToken, async (req, res) => {
     try {
       const noteData = insertNoteSchema.parse(req.body);
       const note = await storage.createNote(noteData);
