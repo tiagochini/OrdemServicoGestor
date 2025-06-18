@@ -21,7 +21,7 @@ interface HeaderProps {
 const Header = ({ onMenuClick }: HeaderProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [, navigate] = useLocation();
-  const { user, logoutMutation } = useAuth();
+  const { user, logout } = useAuth();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,11 +32,8 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   };
   
   const handleLogout = () => {
-    logoutMutation.mutate(undefined, {
-      onSuccess: () => {
-        navigate('/auth');
-      }
-    });
+    logout();
+    navigate('/auth');
   };
   
   // Get user initials for avatar
