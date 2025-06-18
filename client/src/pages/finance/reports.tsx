@@ -94,10 +94,15 @@ const Reports = () => {
 
   // Consulta para obter DRE (Demonstração de Resultados)
   const { data: profitLossData, isLoading: isLoadingProfitLoss } = useQuery({
-    queryKey: ["/api/reports/profit-and-loss", period, dateRange],
+    queryKey: ["/api/reports/profit-loss", period, dateRange],
     queryFn: async () => {
       const { startDate, endDate } = getReportDates();
-      const response = await fetch(`/api/reports/profit-and-loss?startDate=${startDate}&endDate=${endDate}`);
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/reports/profit-loss?startDate=${startDate}&endDate=${endDate}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (!response.ok) {
         throw new Error("Falha ao carregar dados de lucros e perdas");
       }
@@ -118,7 +123,12 @@ const Reports = () => {
     queryKey: ["/api/reports/budget-vs-actual", period, dateRange],
     queryFn: async () => {
       const { startDate, endDate } = getReportDates();
-      const response = await fetch(`/api/reports/budget-vs-actual?startDate=${startDate}&endDate=${endDate}`);
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/reports/budget-vs-actual?startDate=${startDate}&endDate=${endDate}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (!response.ok) {
         throw new Error("Falha ao carregar dados de orçamento vs real");
       }

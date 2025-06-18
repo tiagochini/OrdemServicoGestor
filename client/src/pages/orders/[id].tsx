@@ -100,7 +100,12 @@ const OrderDetails = () => {
   const { data: notes = [], refetch: refetchNotes } = useQuery<any[]>({
     queryKey: ['/api/work-orders', orderId, 'notes'],
     queryFn: async () => {
-      const response = await fetch(`/api/work-orders/${orderId}/notes`);
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/work-orders/${orderId}/notes`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch notes');
       }
@@ -112,7 +117,12 @@ const OrderDetails = () => {
   const { data: workOrderItems = [], refetch: refetchItems } = useQuery<any[]>({
     queryKey: ['/api/work-orders', orderId, 'items'],
     queryFn: async () => {
-      const response = await fetch(`/api/work-orders/${orderId}/items`);
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/work-orders/${orderId}/items`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch work order items');
       }
