@@ -133,6 +133,8 @@ const OrdersList = () => {
           <OrderFilter 
             onStatusChange={setStatusFilter}
             onTechnicianChange={setTechnicianFilter}
+            defaultStatus={statusFilter}
+            defaultTechnician={technicianFilter}
           />
         </div>
         

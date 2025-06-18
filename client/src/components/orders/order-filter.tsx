@@ -22,7 +22,26 @@ const OrderFilter = ({
   // Fetch technicians for dropdown
   const { data: technicians } = useQuery<any[]>({
     queryKey: ['/api/technicians'],
+    queryFn: async () => {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('/api/technicians', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch technicians');
+      return response.json();
+    },
   });
+  
+  // Update local state when props change
+  useEffect(() => {
+    setStatus(defaultStatus);
+  }, [defaultStatus]);
+  
+  useEffect(() => {
+    setTechnicianId(defaultTechnician);
+  }, [defaultTechnician]);
   
   // Update parent component when filters change
   useEffect(() => {

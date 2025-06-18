@@ -1,0 +1,17 @@
+GET https://88daf801-4a82-4feb-851d-8e3f58e66731-00-35u4tyvbz25xk.worf.replit.dev/api/work-orders 200
+
+Request Headers
+
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInVzZXJuYW1lIjoiYWRtaW4iLCJyb2xlIjoiYWRtaW4iLCJlbWFpbCI6ImFkbWluQHN5c3RlbS5sb2NhbCIsImlhdCI6MTc1MDI1NDE3NSwiZXhwIjoxNzUwMzQwNTc1fQ.QA1XkRsTsGS3SMez4tX8av9OXUJwGrv7cCxA7IFHI6c
+
+Response Headers
+
+content-length: 1830
+content-type: application/json; charset=utf-8
+date: Wed, 18 Jun 2025 13:54:55 GMT
+etag: W/"726-OepbMoIOfxNl/sVRgu4nc8l+HlM"
+replit-cluster: worf
+x-powered-by: Express
+x-robots-tag: none, noindex, noarchive, nofollow, nositelinkssearchbox, noimageindex, none, noindex, noarchive, nofollow, nositelinkssearchbox, noimageindex
+
+[{"customerId":1,"technicianId":1,"status":"completed","description":"Manutenção em impressora HP com problema de alimentação de papel.","serviceType":"Manutenção de Hardware","notes":"","id":1,"orderNumber":"OS-9820","createdAt":"2025-06-18T13:46:31.692Z","updatedAt":"2025-06-18T13:51:37.220Z"},{"customerId":2,"technicianId":2,"status":"in_progress","description":"Instalação de novo roteador WiFi e configuração de rede doméstica.","serviceType":"Suporte de Rede","notes":"","id":2,"orderNumber":"OS-9821","createdAt":"2025-06-18T13:46:31.693Z","updatedAt":"2025-06-18T13:46:31.693Z"},{"customerId":3,"technicianId":3,"status":"in_progress","description":"Manutenção preventiva em sistema de ar condicionado do escritório central.","serviceType":"Manutenção Preventiva","notes":"","id":3,"orderNumber":"OS-9822","createdAt":"2025-06-18T13:46:31.693Z","updatedAt":"2025-06-18T13:46:31.693Z"},{"customerId":4,"technicianId":1,"status":"completed","description":"Reparo em tela de notebook Dell que apresentava falhas de imagem.","serviceType":"Manutenção de Hardware","notes":"","id":4,"orderNumber":"OS-9823","createdAt":"2025-06-18T13:46:31.693Z","updatedAt":"2025-06-18T13:46:31.693Z"},{"customerId":5,"technicianId":2,"status":"completed","description":"Formatação de computador e instalação de pacote de softwares padrão.","serviceType":"Instalação de Software","notes":"","id":5,"orderNumber":"OS-9824","createdAt":"2025-06-18T13:46:31.693Z","updatedAt":"2025-06-18T13:46:31.693Z"},{"customerId":1,"technicianId":null,"status":"cancelled","description":"Substituição de bateria em smartphone Samsung S21. Cliente cancelou o pedido.","serviceType":"Manutenção de Hardware","notes":"","id":6,"orderNumber":"OS-9825","createdAt":"2025-06-18T13:46:31.693Z","updatedAt":"2025-06-18T13:46:31.693Z"}]
