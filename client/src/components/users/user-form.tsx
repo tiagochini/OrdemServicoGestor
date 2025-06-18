@@ -57,10 +57,21 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
         email: data.email === "" ? null : data.email,
       };
       
-      return apiRequest('/api/users', {
+      const response = await fetch('/api/users', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
         body: JSON.stringify(payload),
       });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao criar usuário');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -85,10 +96,21 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
         email: data.email === "" ? null : data.email,
       };
       
-      return apiRequest(`/api/users/${user!.id}`, {
+      const response = await fetch(`/api/users/${user!.id}`, {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
         body: JSON.stringify(payload),
       });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao atualizar usuário');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({

@@ -10,8 +10,10 @@ import {
   CreditCard,
   BarChart,
   Package,
-  Tags
+  Tags,
+  UserCog
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SidebarProps {
   mobile?: boolean;
@@ -20,6 +22,7 @@ interface SidebarProps {
 
 const Sidebar = ({ mobile = false, onClose }: SidebarProps) => {
   const [location] = useLocation();
+  const { user } = useAuth();
   
   const navItems = [
     {
@@ -66,6 +69,18 @@ const Sidebar = ({ mobile = false, onClose }: SidebarProps) => {
     }
   ];
 
+  // Adicionar item de administração apenas para admins
+  const adminItems = user?.role === 'admin' ? [
+    {
+      name: "Gerenciar Usuários",
+      href: "/admin/users",
+      icon: UserCog,
+      active: location.startsWith("/admin/users")
+    }
+  ] : [];
+
+  const allNavItems = [...navItems, ...adminItems];
+
   return (
     <div className={`${mobile ? "" : "hidden lg:flex lg:flex-shrink-0"}`}>
       <div className="flex flex-col w-64 border-r border-gray-200 pt-5 pb-4 bg-white">
@@ -74,7 +89,7 @@ const Sidebar = ({ mobile = false, onClose }: SidebarProps) => {
         </div>
         <div className="mt-6 h-0 flex-1 flex flex-col overflow-y-auto">
           <nav className="px-2 space-y-1">
-            {navItems.map((item) => (
+            {allNavItems.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
